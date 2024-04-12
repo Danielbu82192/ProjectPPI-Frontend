@@ -7,6 +7,7 @@ import './css/style.css'
 
 function crear() {
     const [labelCheck, setLabelCheck] = useState([])
+    const [tipoCita, setTipoCita] = useState('1')
     const [showCorrecto, setShowCorrecto] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [estadoCrear, setEstadoCrear] = useState(false)
@@ -28,7 +29,7 @@ function crear() {
     };
 
     const calcularNumeroDiaLunes = () => {
-        const fecha = new Date();
+        const fecha = new Date("04/08/2024");
         //fecha.setHours(3);
         let diaSemanas = fecha.getDay();
         const numeroDia = fecha.getDate();
@@ -42,11 +43,11 @@ function crear() {
         setDiaCreacion(dia[1]);
         const numeroDia = diasSemana[dia[0]];
         const fechaActual = new Date();
-        let hora = 0;/*
+        let hora = 0;
         fechaActual.setHours(3);
         fechaActual.setMinutes(0);
         fechaActual.setSeconds(0);
-        fechaActual.setMilliseconds(0);*/
+        fechaActual.setMilliseconds(0);
         if (numeroDia == fechaActual.getDay()) {
             hora = fechaActual.getHours()
             if (hora >= 1 && hora <= 2) {
@@ -89,7 +90,7 @@ function crear() {
     }, [horaSeleccionadas]);
 
     const cambiaDia = (item, index) => {
-        horaSeleccionadas.map((item)=>{
+        horaSeleccionadas.map((item) => {
             const checkbox = document.getElementById(item);
             checkbox.checked = false
         })
@@ -97,9 +98,9 @@ function crear() {
         setHoras([])
         labelCheck.map((item) => {
             const checkbox = document.getElementById(item);
-            const lbCheckbox = document.getElementById(`lb${item}`); 
+            const lbCheckbox = document.getElementById(`lb${item}`);
             lbCheckbox.classList.remove("labeldsabilitado");
-            checkbox.disabled = false;  
+            checkbox.disabled = false;
         })
         const dia = split(item, ' ')
         obtenerHoraActual(dia, index);
@@ -130,8 +131,10 @@ function crear() {
                     "estadoCita": 1,
                     "link": "",
                     "modificaciones": "",
-                    "usuariocitaequipo": 1
-                }
+                    "usuariocitaequipo": 1,
+                    "tipoCita":tipoCita
+                } 
+                console.log(datos)
                 const requestOptions = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -163,15 +166,15 @@ function crear() {
     }
 
     function formatTime(timeString) {
-        const formattedTime = format(new Date(`2000-01-01T${timeString}`), 'h:mm');
-        return formattedTime.replace(/^0(\d)/, '$1');
+        const formattedTime = format(new Date(`2000-01-01T${timeString}`), 'HH:mm');
+    return formattedTime.replace(/^0(\d)/, '$1');
     }
     const buscarCitas = async (dia) => {
         const fechaActual = new Date();
         const fechaLunes = new Date(fechaActual);
         const fechaSabado = new Date(fechaActual); // Clona la fecha actual
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
-        fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 6)); // Establece la fecha al próximo lunes
+        fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
 
@@ -182,12 +185,22 @@ function crear() {
             data.map((item) => {
                 const fecha = new Date(item.fecha)
                 if (fecha.getDate() == dia[1]) {
-                    const horas = formatTime(item.hora);
-                    const checkbox = document.getElementById(horas);
-                    const lbCheckbox = document.getElementById(`lb${horas}`);
-                    setLabelCheck(prevState => [...prevState, [horas]])
-                    lbCheckbox.classList.add("labeldsabilitado");
-                    checkbox.disabled = true;
+                    console.log(data)
+                    const fecha = new Date();
+                    fecha.setHours(3);
+                    fecha.setMinutes(0);
+                    fecha.setSeconds(0);
+                    fecha.setMilliseconds(0);
+                    const fechaHoyForma= format(new Date, 'dd/MM/yyyy'); 
+                    const fechaCitaForma= format(item.fecha,'dd/MM/yyyy'); 
+                    if (parseInt(item.hora.split(":")[0]) >= fecha.getHours() + 4 || fechaHoyForma!=fechaCitaForma) { 
+                        const horas = formatTime(item.hora);
+                        const checkbox = document.getElementById(horas); 
+                        const lbCheckbox = document.getElementById(`lb${horas}`);
+                        setLabelCheck(prevState => [...prevState, [horas]])
+                        lbCheckbox.classList.add("labeldsabilitado");
+                        checkbox.disabled = true;
+                    }
                 }
             })
 
@@ -218,6 +231,22 @@ function crear() {
     return (
         <div>
             <div>
+                <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
+
+                <div className=' justify-center  pt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:flex gap-4" '>
+                    <div className='px-2 py-4'>
+                        <input onChange={() => { setTipoCita('1') }} defaultChecked type="radio" id='Virtual' name="Ubicacion" className=" peer hidden" />
+                        <label htmlFor='Virtual' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-green-500 py-3 px-6 font-bold text-green-500 transition-colors duration-200 ease-in-out peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-200">Virtual</label>
+                    </div>
+
+                    <div className='px-2 py-4'>
+                        <input onChange={() => {  setTipoCita('2') }} type="radio" id='Presencial' name="Ubicacion" className=" peer hidden" />
+                        <label htmlFor='Presencial' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-indigo-500 py-3 px-6 font-bold text-indigo-500 transition-colors duration-200 ease-in-out peer-checked:bg-indigo-500 peer-checked:text-white peer-checked:border-indigo-200">Presencial</label>
+                    </div>
+                </div>
+
+            </div>
+            <div className='pt-8'>
                 <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
 
                 <div className=' justify-center  pt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:flex gap-4" '>
@@ -263,7 +292,7 @@ function crear() {
                             </svg>
                         </div>
                         <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
-                            <div>Error al cargar</div>
+                            <div>Error al crear</div>
                             <button onClick={() => { setShowAlert(!showAlert) }}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
                                     <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>

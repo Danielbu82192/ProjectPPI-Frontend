@@ -8,8 +8,9 @@ function calendario() {
     const matriz = Array.from({ length: 7 }, () => Array.from({ length: 42 }));
     const [dias, setDias] = useState([]);
     const [showAlert, setShowAlert] = useState(false);
-    const [showNoAseaorias, setShowNoAseaorias] = useState(false); 
-    const [diasConst, setDiasConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
+    const [showNoAseaorias, setShowNoAseaorias] = useState(false);
+
+    const [diasConst, setDiasConst] = useState(['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const [numeroDiaLunes, setNumeroDiaLunes] = useState(null);
     let horasid = '';
     const horasIniciales = 6; // Hora inicial para empezar
@@ -34,9 +35,9 @@ function calendario() {
 
     const Login = async () => {
         const response = await fetch(`http://localhost:3002/usuario/juan@gmail.com/123456789`);
-        const data = await response.json(); 
-        if (response.ok) {  
-            idAsesor=data[0].id; 
+        const data = await response.json();
+        if (response.ok) {
+            idAsesor = data[0].id;
             processAsesor();
 
         } else {
@@ -44,7 +45,7 @@ function calendario() {
         }
     }
 
-    function processAsesor() { 
+    function processAsesor() {
 
         busacrCitas();
     }
@@ -52,17 +53,17 @@ function calendario() {
     const busacrCitas = async () => {
         const fechaActual = new Date();
         const fechaLunes = new Date(fechaActual);
-        const fechaSabado = new Date(fechaActual); // Clona la fecha actual
+        const fechaSabado = new Date(fechaActual);
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
-        fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 6)); // Establece la fecha al próximo lunes
+        fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
-
         const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
         const data = await response.json();
         console.log(data)
-         if (response.ok) {
-            data.map((item) => { 
+        if (response.ok) {
+            console.log(data)
+            data.map((item) => {
                 const horaCompleta = item.hora;
                 const [hora, minutos] = horaCompleta.split(':');
                 const horaFormateada = hora.toString().padStart(2, '0');
@@ -70,7 +71,7 @@ function calendario() {
                 const fechaCompleta = new Date(item.fecha);
                 const diaSemana = fechaCompleta.getDay();
                 const numeroDia = fechaCompleta.getDate();
-                const id = `${horaFormateada}:${minutosFormateados}/${diasConst[diaSemana]} ${numeroDia + 1}`;
+                const id = `${horaFormateada}:${minutosFormateados}/${diasConst[diaSemana]} ${numeroDia}`;
 
                 const div = document.getElementById(id);
                 if (div) {
@@ -78,7 +79,8 @@ function calendario() {
                         div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-gray-400 hover:bg-gray-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.estadoCita.nombre}</button>`;
 
                     } else if (item.estadoCita.id == 2) {
-                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.estadoCita.nombre}</button>`;
+                        console.log(item)
+                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
                     }
                     const button = document.getElementById(`button-${item.id}`);
                     button.addEventListener('click', () => visualizarCita(item.id));
@@ -130,7 +132,7 @@ function calendario() {
                         elementos.push(
                             <div key={i} className='border-l border-gray-300'>
                                 <p className="font-bold text-gray-700 text-xl">{numeroDiaLunes + i}</p>
-                                <p className="text-gray-400">{diasConst[i]}</p>
+                                <p className="text-gray-400">{diasConst[i + 1]}</p>
                             </div>
                         );
                     }
@@ -164,7 +166,7 @@ function calendario() {
                                 cont = 0
                             }  // Incrementar cont para obtener el índice correcto en el array `dias`
                             return (
-                                <div key={indiceColumna} id={horasid + '/' + diasConst[cont] + ' ' + (numeroDiaLunes + cont)} className='border-t border-l border-gray-300'>
+                                <div key={indiceColumna}   id={horasid + '/' + diasConst[cont + 1] + ' ' + (numeroDiaLunes + cont)} className='border-t border-l border-gray-300'>
 
                                 </div>
                             );

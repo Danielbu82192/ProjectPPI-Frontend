@@ -4,32 +4,43 @@ import React, { useEffect, useState } from 'react'
 import Mostrar from '@/component/asesorias/mostrar/mostrarAs'
 import { format } from 'date-fns';
 function page({ params }) {
+
     const [cita, setCita] = useState([]);
-    const [diaSemana, setDiaSemana] = useState('');
+    const [semanaConst, setSemanaConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const [diasConst, setDiasConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const [estadoModificar, setEstadoModificar] = useState(false);
     const [grupoTrue, setGrupoTrue] = useState(false);
+    const [selectEstado, setSelectEstado] = useState(1);
     const [citaEstado, setCitaEstado] = useState([]);
+    const [showModificar, setShowModificar] = useState(true)
+    const [dia, setDia] = useState()
+    const [numeroDia, setNumeroDia] = useState()
     const [fecha, setFecha] = useState('');
     const [hora, setHora] = useState('');
+    const [horaInicio, setHoraInicio] = useState('');
+    const [horaFin, setHoraFin] = useState('');
+    const [horaConst, setHoraConst] = useState('');
+    const [minConst, setMinConst] = useState('');
+    const [horaFija, setHoraFija] = useState('');
+    const [minFija, setMinFija] = useState('');
     const [equipo, setEquipo] = useState('');
     const [showAlert, setShowAlert] = useState(false);
+    const [numeroDiaLunes, setNumeroDiaLunes] = useState(null);
+    const calcularNumeroDiaLunes = (fecha) => {
+        const diaSemana = fecha.getDay();
+        const numeroDia = fecha.getDate();
+        return numeroDia - diaSemana;
+    };
 
     function formatDate(dateString) {
         return format(new Date(dateString), 'dd/MM/yyyy');
     }
     function formatTime(timeString) {
-        return format(new Date(`2000-01-01T${timeString}`), 'hh:mm a');
+        return format(new Date(`2000-01-01T${timeString}`), 'HH:mm');
     }
 
-    const optenerFecha = () => {
-        const fecha = new Date();
-        setDiaSemana(fecha.getDay())
-        const diasSiguientes = diasConst.slice(diaSemana + 1).concat(diasConst.slice(0, diaSemana)); // Concatenamos los días que siguen a hoy con los que van antes de hoy
-        setDiasConst(diasSiguientes);
-    }
+
     useEffect(() => {
-        optenerFecha()
         const fetchData = async () => {
             try {
                 const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${params.id}`);
@@ -37,9 +48,43 @@ function page({ params }) {
                 setCita(data);
                 console.log(data)
                 setCitaEstado(data.estadoCita)
+                setNumeroDiaLunes(calcularNumeroDiaLunes(new Date(data.fecha)) + new Date().getDay())
+                setDia(new Date(data.fecha).getDay());
+                setSemanaConst(semanaConst.slice(new Date().getDay() - 7))
+                setSelectEstado(data.estadoCita.id)
+                setNumeroDia(new Date(data.fecha).getDate())
+                if (new Date().getDate() == new Date(data.fecha).getDate()) {
+                    setHoraInicio(new Date().getHours() + 4)
+                    setHoraFin(15 - new Date().getHours() + 4)
+                } else {
+                    setHoraInicio(6)
+                    setHoraFin(15)
+                }
                 setEquipo(data.equipo)
+                setHoraConst(data.hora.split(':')[0])
+                setHoraFija(data.hora.split(':')[0])
+                setMinConst(data.hora.split(':')[1])
+                setMinFija(data.hora.split(':')[1])
                 setHora(formatTime(data.hora))
-                setFecha(formatDate(data.fecha))
+                setFecha(formatDate(data.fecha)) 
+                if (new Date().getDate() > new Date(data.fecha).getDate()) { 
+                    setShowModificar(true)
+                } else if (new Date().getDate() < new Date(data.fecha).getDate()) { 
+                    setShowModificar(false)
+                } else {
+                    const fecha = new Date();
+                    /*fecha.setHours(15)
+                    fecha.setMinutes(0)*/
+                    const minHoraACtual = (fecha.getHours() + 4) * 60 + (fecha.getMinutes())
+                    const minCita = (parseInt(data.hora.split(':')[0])) * 60 + ((parseInt(data.hora.split(':')[1])))
+                    if (minHoraACtual - minCita <= 0) {
+
+                        setShowModificar(false)
+                    } else {
+                        setShowModificar(true)
+
+                    }
+                }
                 if (!response.ok) {
                     setShowAlert(true);
                     throw new Error('Respuesta no exitosa');
@@ -49,7 +94,6 @@ function page({ params }) {
                 console.error('Error fetching data:', error);
             }
         };
-
         fetchData();
     }, [params.id, setCita]);
     useEffect(() => {
@@ -61,6 +105,16 @@ function page({ params }) {
             return () => clearTimeout(timer);
         }
     }, [showAlert]);
+    useEffect(() => {
+        if (new Date().getDate() == numeroDia) {
+            setHoraInicio(new Date().getHours() + 4)
+            setHoraFin(15 - new Date().getHours() + 4)
+        } else {
+            setHoraInicio(6)
+            setHoraFin(15)
+        }
+    }, [numeroDia]);
+    console.log(diasConst)
     return (
         <><div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
             <div className='pt-8  pb-8 w-full'>
@@ -78,17 +132,20 @@ function page({ params }) {
                                     <select
                                         name="estado"
                                         id="estado"
+                                        value={selectEstado}
                                         onChange={(e) => {
-                                            if (e.target.value === "reservado") {
+                                            if (e.target.value === "2") {
                                                 setGrupoTrue(true);
+                                                setSelectEstado(2)
                                             } else {
+                                                setSelectEstado(1)
                                                 setGrupoTrue(false);
                                             }
                                         }}
                                         className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
                                     >
-                                        <option value="disponible">Disponible</option>
-                                        <option value="reservado">Reservado</option>
+                                        <option value="1">Disponible</option>
+                                        <option value="2">Reservado</option>
                                     </select>
                                 ) :
                                     (
@@ -102,11 +159,10 @@ function page({ params }) {
 
                                 {estadoModificar ? (
 
-                                    <select className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
+                                    <select value={numeroDia} onChange={(e) => { setNumeroDia(e.target.value) }} className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
                                     >
-                                        <option value="" selected disabled>Selecciona un día</option>
-                                        {diasConst.map((dia, index) => (
-                                            <option key={index} value={index}>{dia}</option>
+                                        {semanaConst.map((dia, index) => (
+                                            <option key={index} value={numeroDiaLunes + index}>{dia} {numeroDiaLunes + index}</option>
                                         ))}
                                     </select>
                                 ) :
@@ -119,13 +175,14 @@ function page({ params }) {
                                 <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
                                 {estadoModificar ? (
 
-                                    <><select id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                        <option selected disabled>Hora</option>
-                                        {Array.from({ length: 15 }, (_, i) => i + 6).map(hour => (
+                                    <><select value={horaConst} onChange={(e) => { setHoraConst(e.target.value) }} id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+                                        <option value={horaFija} selected>{horaFija}</option>
+                                        {Array.from({ length: horaFin }, (_, i) => i + horaInicio).map(hour => (
                                             <option key={hour} value={hour.toString().padStart(2, '0')}>{hour.toString().padStart(2, '0')}</option>
                                         ))}
-                                    </select><select id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                            <option selected disabled>Minutos</option>
+                                    </select>
+                                        <select value={minConst} onChange={(e) => { setMinConst(e.target.value) }} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+
                                             <option value="00">00</option>
                                             <option value="20">20</option>
                                             <option value="40">40</option>
@@ -149,15 +206,20 @@ function page({ params }) {
                                 </div>) : null}
                         </div>
                         <div className="justify-center  lg:mt-20 xl:mt-0">
+                            {!showModificar ? (
+                                !estadoModificar ? (
+                                    <>
+                                        <button onClick={() => { setEstadoModificar(true) }} className="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
+                                        <button className="text-white xl:mt-7 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={() => { setEstadoModificar(true) }} className="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Confirmar</button>
+                                        <button onClick={() => { setEstadoModificar(false) }} className="text-white xl:mt-7 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
+                                    </>
+                                )
+                            ) : null}
 
-                            {!estadoModificar ? (
-                                <button onClick={() => { setEstadoModificar(true) }} class="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
-                            ) : (
-                                <>
-                                    <button onClick={() => { setEstadoModificar(true) }} class="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Confirmar</button>
-                                    <button onClick={() => { setEstadoModificar(false) }} class="text-white xl:mt-7 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
-                                </>
-                            )}
                         </div>
                     </div>
                 ) : (
