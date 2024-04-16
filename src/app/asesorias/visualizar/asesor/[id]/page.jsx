@@ -12,6 +12,7 @@ function page({ params }) {
     const [grupoTrue, setGrupoTrue] = useState(false);
     const [selectEstado, setSelectEstado] = useState(1);
     const [citaEstado, setCitaEstado] = useState([]);
+    const [tipoCita, setTipoCita] = useState([]);
     const [showModificar, setShowModificar] = useState(true)
     const [dia, setDia] = useState()
     const [numeroDia, setNumeroDia] = useState()
@@ -25,7 +26,14 @@ function page({ params }) {
     const [minFija, setMinFija] = useState('');
     const [equipo, setEquipo] = useState('');
     const [showAlert, setShowAlert] = useState(false);
+    const [showACampos, setShowACampos] = useState(false);
     const [numeroDiaLunes, setNumeroDiaLunes] = useState(null);
+    const [salon, setSalon] = useState('');
+    const [idEquipo, setIdEquipo] = useState('');
+    const [listEquipos, setListEquipos] = useState([]);
+    const [estudiantesEquipo, setEstudiantesEquipo] = useState([]);
+    const [showCorrecto, setShowCorrecto] = useState(false);
+    const [showOcupado, setShowOcupado] = useState(false);
     const calcularNumeroDiaLunes = (fecha) => {
         const diaSemana = fecha.getDay();
         const numeroDia = fecha.getDate();
@@ -36,7 +44,8 @@ function page({ params }) {
         return format(new Date(dateString), 'dd/MM/yyyy');
     }
     function formatTime(timeString) {
-        return format(new Date(`2000-01-01T${timeString}`), 'HH:mm');
+        const hora = timeString.split(':')[0] + ':' + timeString.split(':')[1];
+        return format(new Date(`2000-01-01T${hora}`), 'HH:mm');
     }
 
 
@@ -44,15 +53,18 @@ function page({ params }) {
         const fetchData = async () => {
             try {
                 const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${params.id}`);
-                const data = await response.json();
+                const data = await response.json(); 
                 setCita(data);
-                console.log(data)
                 setCitaEstado(data.estadoCita)
                 setNumeroDiaLunes(calcularNumeroDiaLunes(new Date(data.fecha)) + new Date().getDay())
                 setDia(new Date(data.fecha).getDay());
                 setSemanaConst(semanaConst.slice(new Date().getDay() - 7))
                 setSelectEstado(data.estadoCita.id)
                 setNumeroDia(new Date(data.fecha).getDate())
+                setTipoCita(data.tipoCita)
+                const response2 = await fetch(`http://localhost:3002/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
+                const data2 = await response2.json();
+                setSalon(data2[0].salon)
                 if (new Date().getDate() == new Date(data.fecha).getDate()) {
                     setHoraInicio(new Date().getHours() + 4)
                     setHoraFin(15 - new Date().getHours() + 4)
@@ -60,16 +72,16 @@ function page({ params }) {
                     setHoraInicio(6)
                     setHoraFin(15)
                 }
-                setEquipo(data.equipo)
+                setEquipo(data.equipocita)
                 setHoraConst(data.hora.split(':')[0])
                 setHoraFija(data.hora.split(':')[0])
                 setMinConst(data.hora.split(':')[1])
                 setMinFija(data.hora.split(':')[1])
                 setHora(formatTime(data.hora))
-                setFecha(formatDate(data.fecha)) 
-                if (new Date().getDate() > new Date(data.fecha).getDate()) { 
+                setFecha(formatDate(data.fecha))
+                if (new Date().getDate() > new Date(data.fecha).getDate()) {
                     setShowModificar(true)
-                } else if (new Date().getDate() < new Date(data.fecha).getDate()) { 
+                } else if (new Date().getDate() < new Date(data.fecha).getDate()) {
                     setShowModificar(false)
                 } else {
                     const fecha = new Date();
@@ -96,6 +108,7 @@ function page({ params }) {
         };
         fetchData();
     }, [params.id, setCita]);
+
     useEffect(() => {
         if (showAlert) {
             const timer = setTimeout(() => {
@@ -105,6 +118,16 @@ function page({ params }) {
             return () => clearTimeout(timer);
         }
     }, [showAlert]);
+
+    useEffect(() => {
+        if (showACampos) {
+            const timer = setTimeout(() => {
+                setShowACampos(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showACampos]);
     useEffect(() => {
         if (new Date().getDate() == numeroDia) {
             setHoraInicio(new Date().getHours() + 4)
@@ -114,7 +137,117 @@ function page({ params }) {
             setHoraFin(15)
         }
     }, [numeroDia]);
-    console.log(diasConst)
+    useEffect(() => {
+        console.log(listEquipos)
+    }, [listEquipos]);
+    const listarEquipo = async () => {
+        try {
+            const response = await fetch(`http://localhost:3002/equipo-ppi`);
+            const data = await response.json();
+            if (response.ok) { 
+                setListEquipos(data)
+            }
+        } catch (error) { 
+            setShowAlert(true);
+        }
+    }
+    useEffect(() => {
+
+
+
+        const getEstudiantesXEquipo = async () => {
+            try {
+                const response = await fetch(`http://localhost:3002/equipo-usuarios/Estudiantes/${equipo.codigoEquipo}`);
+                const data = await response.json();
+                if (response.ok) {
+
+                    setEstudiantesEquipo([])
+                    data.forEach(item => {
+                        setEstudiantesEquipo(prevEstudiantes => [...prevEstudiantes, item.usuario]);
+                    });
+                }
+            } catch (error) { 
+                setShowAlert(true);
+            }
+        }
+        if (citaEstado.id != 1) {
+            getEstudiantesXEquipo();
+        }
+    }, [equipo]);
+
+    const modificarCita = async () => {
+        let datos = {}
+        const fecha = new Date();
+        if (parseInt(numeroDia) >= fecha.getDate()) {
+            const horaMod = (horaConst * 60) + minConst;
+            const horaActual = (parseInt(fecha.getHours() * 60) + parseInt(fecha.getMinutes()));
+            if (parseInt(numeroDia) == fecha.getDate()) {
+                if (horaActual - horaMod < 0) {
+                    setShowACampos(true)
+                }
+            } else {
+                fecha.setDate(numeroDia-1)
+                const fechaFormat = fecha.toISOString().split('T')[0]; 
+                const hora = `${horaConst}:${minConst}`;
+                if (selectEstado == 1) {
+                    datos = {
+                        "fecha": fechaFormat,
+                        "hora": hora,
+                    }
+                } else {
+                    datos = {
+                        "fecha": fechaFormat,
+                        "hora": hora,
+                        "estadoCita":2,
+                        "equipocita":idEquipo
+                    }
+                }
+            }
+        } else {
+            setShowACampos(true)
+        }
+        const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/BuscarFechaHoraUsuario/${datos.fecha}/${hora}/1`);
+        if (response2.ok) {
+            const data2 = await response2.json(); 
+            if (data2.length == 0) {
+                setShowCorrecto(true)
+                const requestOptions = {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datos)
+                };
+                console.log(datos)
+                const response = await fetch('http://localhost:3002/citas-asesoria-ppi/' + params.id, requestOptions);
+                if (response.ok) {
+                    setShowCorrecto(true)
+                }
+            } else {
+                setShowOcupado(true)
+            }
+        }
+    }
+
+    const cancelarCita=(id)=>{ 
+        
+    }
+    useEffect(() => {
+        if (showCorrecto) {
+            const timer = setTimeout(() => {
+                setShowCorrecto(false);
+            }, 2000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showCorrecto]);
+    useEffect(() => {
+        if (showOcupado) {
+            const timer = setTimeout(() => {
+                setShowOcupado(false);
+            }, 2000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showOcupado]);
     return (
         <><div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
             <div className='pt-8  pb-8 w-full'>
@@ -122,99 +255,115 @@ function page({ params }) {
                     <h1 className='text-4xl font-bold text-center text-gray-600'>Visualizar citas de asesorías</h1>
                 </div>
 
-                {citaEstado.nombre == 'Disponible' ? (
+                {citaEstado.id == 1 ? (
 
                     <div className='p-10  grid grid-cols-1 lg:grid-cols-2'>
-                        <div className="xl:ml-40">
-                            <div className="flex m-4 sm:m-10">
-                                <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
-                                {estadoModificar ? (
-                                    <select
-                                        name="estado"
-                                        id="estado"
-                                        value={selectEstado}
-                                        onChange={(e) => {
-                                            if (e.target.value === "2") {
-                                                setGrupoTrue(true);
-                                                setSelectEstado(2)
-                                            } else {
-                                                setSelectEstado(1)
-                                                setGrupoTrue(false);
-                                            }
-                                        }}
-                                        className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
-                                    >
-                                        <option value="1">Disponible</option>
-                                        <option value="2">Reservado</option>
-                                    </select>
-                                ) :
-                                    (
-                                        <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 bg-gray-500 text-white font-semibold rounded-full">
-                                            {citaEstado.nombre}
+                        <div className="xl:ml-0">
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
+                                </div>
+                                <div className='-mt-2'>
+                                    {estadoModificar ? (
+                                        <select
+                                            name="estado"
+                                            id="estado"
+                                            value={selectEstado}
+                                            onChange={(e) => {
+                                                if (e.target.value === "2") {
+                                                    setGrupoTrue(true);
+                                                    setSelectEstado(2);
+                                                    listarEquipo();
+                                                } else {
+                                                    setSelectEstado(1)
+                                                    setGrupoTrue(false);
+                                                }
+                                            }}
+                                            className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
+                                        >
+                                            <option value="1">Disponible</option>
+                                            <option value="2">Reservado</option>
+                                        </select>
+                                    ) :
+                                        (
+                                            <span className="inline-block mt-1 text-2xl sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 bg-gray-500 text-white font-semibold rounded-full">
+                                                {citaEstado.nombre}
+                                            </span>
+                                        )}
+                                </div>
+                            </div>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
+                                </div>
+                                <div>
+                                    {estadoModificar ? (
+
+                                        <select value={numeroDia} onChange={(e) => { setNumeroDia(e.target.value) }} className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
+                                        >
+                                            {semanaConst.map((dia, index) => (
+                                                <option key={index} value={numeroDiaLunes + index}>{dia} {numeroDiaLunes + index}</option>
+                                            ))}
+                                        </select>
+                                    ) :
+                                        (<span className="inline-block font-semibold text-2xl text-gray-500  sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3  ">
+                                            {fecha}
+                                        </span>
+                                        )}
+                                </div>
+                            </div>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
+                                </div>
+                                <div className='flex'>
+                                    {estadoModificar ? (
+
+                                        <><select value={horaConst} onChange={(e) => { setHoraConst(e.target.value) }} id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+                                            <option value={horaFija} selected>{horaFija}</option>
+                                            {Array.from({ length: horaFin }, (_, i) => i + horaInicio).map(hour => (
+                                                <option key={hour} value={hour.toString().padStart(2, '0')}>{hour.toString().padStart(2, '0')}</option>
+                                            ))}
+                                        </select>
+                                            <select value={minConst} onChange={(e) => { setMinConst(e.target.value) }} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+
+                                                <option value="00">00</option>
+                                                <option value="20">20</option>
+                                                <option value="40">40</option>
+                                            </select></>
+                                    ) : (
+                                        <span className="inline-block text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3   ">
+                                            {hora}
                                         </span>
                                     )}
-                            </div>
-                            <div className="flex m-4 sm:m-10">
-                                <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
-
-                                {estadoModificar ? (
-
-                                    <select value={numeroDia} onChange={(e) => { setNumeroDia(e.target.value) }} className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
-                                    >
-                                        {semanaConst.map((dia, index) => (
-                                            <option key={index} value={numeroDiaLunes + index}>{dia} {numeroDiaLunes + index}</option>
-                                        ))}
-                                    </select>
-                                ) :
-                                    (<span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {fecha}
-                                    </span>
-                                    )}
-                            </div>
-                            <div className="flex m-4 sm:m-10">
-                                <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
-                                {estadoModificar ? (
-
-                                    <><select value={horaConst} onChange={(e) => { setHoraConst(e.target.value) }} id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                        <option value={horaFija} selected>{horaFija}</option>
-                                        {Array.from({ length: horaFin }, (_, i) => i + horaInicio).map(hour => (
-                                            <option key={hour} value={hour.toString().padStart(2, '0')}>{hour.toString().padStart(2, '0')}</option>
-                                        ))}
-                                    </select>
-                                        <select value={minConst} onChange={(e) => { setMinConst(e.target.value) }} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-
-                                            <option value="00">00</option>
-                                            <option value="20">20</option>
-                                            <option value="40">40</option>
-                                        </select></>
-                                ) : (
-                                    <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {hora}
-                                    </span>
-                                )}
+                                </div>
                             </div>
                             {grupoTrue ? (
-                                <div className="flex m-4 sm:m-10">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Grupo:</h1>
-                                    <select id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                        <option selected disabled>Grupo</option>
-                                        <option value="101">101</option>
-                                        <option value="102">102</option>
-                                        <option value="103">103</option>
-                                    </select>
-
+                                <div className="grid grid-cols-2 m-4 sm:m-10">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Grupo:</h1>
+                                    </div>
+                                    <div>
+                                        <select onChange={(e)=>{setIdEquipo(e.target.value)}} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+                                            <option selected disabled>Grupo</option>
+                                            {listEquipos.map((item) => (
+                                                <option key={item.id} value={item.id}>
+                                                    {item.codigoEquipo}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>) : null}
                         </div>
                         <div className="justify-center  lg:mt-20 xl:mt-0">
                             {!showModificar ? (
                                 !estadoModificar ? (
                                     <>
-                                        <button onClick={() => { setEstadoModificar(true) }} className="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
-                                        <button className="text-white xl:mt-7 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
-                                    </>
+                                        <button onClick={() => { setEstadoModificar(true); }} className="text-white xl:mt-28 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
+                                          </>
                                 ) : (
                                     <>
-                                        <button onClick={() => { setEstadoModificar(true) }} className="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Confirmar</button>
+                                        <button onClick={() => { modificarCita() }} className="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Confirmar</button>
                                         <button onClick={() => { setEstadoModificar(false) }} className="text-white xl:mt-7 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
                                     </>
                                 )
@@ -225,29 +374,92 @@ function page({ params }) {
                 ) : (
 
                     <div className='p-10  grid grid-cols-1 lg:grid-cols-2'>
-                        <div className="xl:ml-40">
-                            <div className="flex m-4 sm:m-10">
-                                <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
-                                <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 bg-green-500 text-white font-semibold rounded-full">
-                                    {citaEstado.nombre}
-                                </span>
+                        <div className="xl:ml-0">
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
+                                </div>
+                                <div className='-mt-2'>
+                                    <span className="inline-block mt-1 text-2xl sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 bg-emerald-500 text-white font-semibold rounded-full">
+                                        {citaEstado.nombre}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex m-4 sm:m-10">
-                                <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
-                                <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                    {fecha}
-                                </span>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
+                                </div>
+                                <div>
+                                    <span className="inline-block text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3   ">
+                                        {fecha}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex m-4 sm:m-10">
-                                <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
-                                <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                    {hora}
-                                </span>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
+                                </div>
+                                <div>
+                                    <span className="inline-block text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3   ">
+                                        {hora}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Tipo:</h1>
+                                </div>
+                                <div>
+                                    <span className="inline-block text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3   ">
+                                        {tipoCita.nombre}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    {tipoCita.id == 1 ? (
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Enlace:</h1>
+                                    ) : (
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Ubicación:</h1>
+                                    )}
+                                </div><div>
+                                    {tipoCita.id == 1 ? (
+                                        <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
+                                            {cita.link}       </span>
+                                    ) : (
+                                        <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
+                                            {salon}       </span>
+                                    )}
+
+                                </div>
+                            </div>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Equipo:</h1>
+                                </div>
+                                <div>
+                                    <span className="inline-block text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3   ">
+                                        {equipo.codigoEquipo}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="m-4 sm:m-10 grid grid-cols-2">
+                                <div>
+                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estudiantes:</h1>
+                                </div>
+                                <div className='block'>
+                                    {estudiantesEquipo.map((item) => (
+                                        // eslint-disable-next-line react/jsx-key
+                                        <span className=" text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3">
+                                            {item.nombre}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        <div className="justify-center  lg:mt-20 xl:mt-0">
-                            <button class="text-white xl:mt-20 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
-                            <button class="text-white mt-7 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
+                        <div className="justify-center  lg:mt-20 xl:mt-10">
+                            <button class="text-white xl:mt-40 h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver Bitácora</button>
+                            <button onClick={()=>{cancelarCita(cita.id)}} class="text-white xl:mt-10 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
 
                         </div>
                     </div>)}
@@ -273,7 +485,62 @@ function page({ params }) {
                 </div>
             </div>
         )
-            }</>
+            }
+            {showCorrecto && (
+                <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                    <div className="flex w-96 shadow-lg rounded-lg">
+                        <div class="bg-green-600 py-4 px-6 rounded-l-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="text-white fill-current" viewBox="0 0 16 16" width="20" height="20"><path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"></path></svg>
+                        </div>
+                        <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                            <div>Modificado correctamente.</div>
+                            <button onClick={() => { setShowCorrecto(!showCorrecto) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                    <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showACampos && (
+                <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                    <div className="flex w-96 shadow-lg rounded-lg">
+                        <div className="bg-orange-600 py-4 px-6 rounded-l-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="fill-current text-white" width="20" height="20">
+                                <path fillRule="evenodd" d="M4.47.22A.75.75 0 015 0h6a.75.75 0 01.53.22l4.25 4.25c.141.14.22.331.22.53v6a.75.75 0 01-.22.53l-4.25 4.25A.75.75 0 0111 16H5a.75.75 0 01-.53-.22L.22 11.53A.75.75 0 010 11V5a.75.75 0 01.22-.53L4.47.22zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5H5.31zM8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"></path>
+                            </svg>
+                        </div>
+                        <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                            <div>Los campos ingresados son incorrectos, la fecha o la hora no son acordes.</div>
+                            <button onClick={() => { setShowACampos(!showACampos) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                    <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )} {showOcupado && (
+                <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                    <div className="flex w-96 shadow-lg rounded-lg">
+                        <div className="bg-orange-600 py-4 px-6 rounded-l-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="fill-current text-white" width="20" height="20">
+                                <path fillRule="evenodd" d="M4.47.22A.75.75 0 015 0h6a.75.75 0 01.53.22l4.25 4.25c.141.14.22.331.22.53v6a.75.75 0 01-.22.53l-4.25 4.25A.75.75 0 0111 16H5a.75.75 0 01-.53-.22L.22 11.53A.75.75 0 010 11V5a.75.75 0 01.22-.53L4.47.22zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5H5.31zM8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"></path>
+                            </svg>
+                        </div>
+                        <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                            <div>La fecha y hora seleccionadas se encuentran ocupadas.</div>
+                            <button onClick={() => { setShowOcupado(!showOcupado) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                    <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     )
 }
 

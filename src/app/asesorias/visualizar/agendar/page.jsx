@@ -12,12 +12,14 @@ export default function page() {
     const [showM2citas, setShowM2citas] = useState(false)
     const [fechaSeleccionada, setFechaSeleccionada] = useState()
     const [showAlert, setShowAlert] = useState(false)
+    const [showError, setShowError] = useState(false)
     const [estadoPedirCita, setEstadoPedirCita] = useState(false)
     const [horas, setHoras] = useState([]);
     const [horaSeleccionada, setHoraSeleccionada] = useState('')
     const [segundaAsesoria, setSegundaAsesoria] = useState(false);
     const [estadoAgendar, setEstadoAgendar] = useState(false)
     const [horasM, setHorasM] = useState([])
+    const [horaActual, setHorasActual] = useState([])
     useEffect(() => {
         const buscarAsesores = async () => {
             const response = await fetch(`http://localhost:3002/usuario/asesor`);
@@ -26,11 +28,12 @@ export default function page() {
                 setAsesores(data);
             }
         }
-
+        setHorasActual(new Date().getHours())
         buscarAsesores();
     }, []);
     function formatTime(timeString) {
-        const formattedTime = format(new Date(`2000-01-01T${timeString}`), 'h:mm');
+        const hora = timeString.split(':')[0] + ':' + timeString.split(':')[1];
+        const formattedTime = format(new Date(`2000-01-01T${hora}`), 'HH:mm');
         return formattedTime.replace(/^0(\d)/, '$1');
     }
     const buscarCitas = async (asesor) => {
@@ -99,30 +102,56 @@ export default function page() {
                     const estado = item.estadoCita;
                     const tipo = item.tipoCita;
                     const fecha = new Date(item.fecha);
+                    const horaActual = new Date();
+                    const hActual = parseInt(horaActual.getHours()) * 60 + (horaActual.getMinutes())
+                    const minTotal = parseInt(item.hora.split(":")[0]) * 60 + parseInt(item.hora.split(":")[1])
                     if (fecha.getDay() == 1) {
+                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                            return null;
+                        }
                         Lunes.disabled = false;
                         lLunes.classList.remove('labeldsabilitado')
-                        LunesV.push([formatTime(item.hora), item.id, estado.nombre, tipo.nombre])
+                        LunesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
                     } else if (fecha.getDay() == 2) {
+                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                            return null;
+                        }
                         Martes.disabled = false;
                         lMartes.classList.remove('labeldsabilitado')
-                        MartesV.push([formatTime(item.hora), item.id, estado.nombre, tipo.nombre])
+                        MartesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
+
                     } else if (fecha.getDay() == 3) {
+                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                            return null;
+                        }
                         Miercoles.disabled = false;
                         lMiercoles.classList.remove('labeldsabilitado')
-                        MiercolesV.push([formatTime(item.hora), item.id, estado.nombre, tipo.nombre])
+                        MiercolesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
+
                     } else if (fecha.getDay() == 4) {
+                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                            return null;
+                        }
                         Jueves.disabled = false;
                         lJueves.classList.remove('labeldsabilitado')
-                        JuevesV.push([formatTime(item.hora), item.id, estado.nombre, tipo.nombre])
+                        JuevesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
+
                     } else if (fecha.getDay() == 5) {
+                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                            return null;
+                        }
                         Viernes.disabled = false;
                         lViernes.classList.remove('labeldsabilitado')
-                        ViernesV.push([formatTime(item.hora), item.id, estado.nombre, tipo.nombre])
+                        ViernesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
+
                     } else if (fecha.getDay() == 6) {
+                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                            return null;
+                        }
                         Sabado.disabled = false;
                         lSabado.classList.remove('labeldsabilitado')
-                        SabadoV.push([formatTime(item.hora), item.id, estado.nombre, tipo.nombre])
+                        SabadoV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
+
                     }
                 })
                 const Matriz = []
@@ -153,8 +182,7 @@ export default function page() {
 
     const agendarCita = async () => {
         if (estadoPedirCita) {
-            if (segundaAsesoria) {
-                alert()
+            if (segundaAsesoria) { 
                 const fecha = new Date();
                 if (parseInt(fechaSeleccionada) < 3) {
                     setShowAlert(true);
@@ -164,7 +192,7 @@ export default function page() {
                     setShowAlert(true);
                     return;
                 }
-            } 
+            }
             const datos = {
                 "estadoCita": "2",
                 "equipocita": "1",
@@ -174,6 +202,7 @@ export default function page() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
             };
+            console.log(datos)
             const response = await fetch('http://localhost:3002/citas-asesoria-ppi/' + horaSeleccionada, requestOptions);
             if (response.ok) {
                 setEstadoAgendar(false)
@@ -182,7 +211,7 @@ export default function page() {
                     window.location.reload();
                 }, 2000);
             } else {
-                setShowAlert(true);
+                setShowError(true);
             }
         } else {
             setShowM2citas(true)
@@ -206,6 +235,15 @@ export default function page() {
             return () => clearTimeout(timer);
         }
     }, [showAlert]);
+    useEffect(() => {
+        if (showError) {
+            const timer = setTimeout(() => {
+                setShowError(false);
+            }, 2000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showError]);
     useEffect(() => {
         const traerCitasEquipo = async () => {
             setEstadoAgendar(false)
@@ -241,11 +279,13 @@ export default function page() {
         traerCitasEquipo();
     }, []);
 
-    const mostrarBotton = (estado) => { 
+ 
+
+    const mostrarBotton = (estado) => {
         if (fechaSeleccionada + 1 < new Date().getDay()) {
             setEstadoAgendar(true)
         }
-        else{
+        else {
             setEstadoAgendar(true)
         }
     }
@@ -277,36 +317,38 @@ export default function page() {
                             </div>
                             <div className='mt-5'>
                                 <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el dia:</h1>
-                                <div className=' justify-center  pt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:flex gap-4" '>
-                                    <div className='px-2 py-4'>
-                                        <input onChange={(e) => { cargarHoras(0) }} type="radio" id='Lunes' name="dia-semana" className="peer hidden" disabled />
-                                        <label htmlFor='Lunes' id='LbLunes' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
+                                <div class="justify-center flex pt-8">
+                                    <div className='grid grid-cols-1 pl-14 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3   xl:flex gap-4'>
+                                        <div className='px-2 py-4'>
+                                            <input onChange={(e) => { cargarHoras(0) }} type="radio" id='Lunes' name="dia-semana" className="peer hidden" disabled />
+                                            <label htmlFor='Lunes' id='LbLunes' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
         py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> Lunes</label>
-                                    </div>
-                                    <div className='px-2 py-4'>
-                                        <input onChange={(e) => { cargarHoras(1) }} type="radio" id='Martes' name="dia-semana" className="peer hidden" disabled />
-                                        <label htmlFor='Martes' id='LbMartes' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
+                                        </div>
+                                        <div className='px-2 py-4'>
+                                            <input onChange={(e) => { cargarHoras(1) }} type="radio" id='Martes' name="dia-semana" className="peer hidden" disabled />
+                                            <label htmlFor='Martes' id='LbMartes' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
         py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> Martes</label>
-                                    </div>
-                                    <div className='px-2 py-4'>
-                                        <input onChange={(e) => { cargarHoras(2) }} type="radio" id='Miercoles' name="dia-semana" className="peer hidden" disabled />
-                                        <label htmlFor='Miercoles' id='LbMiercoles' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
+                                        </div>
+                                        <div className='px-2 py-4'>
+                                            <input onChange={(e) => { cargarHoras(2) }} type="radio" id='Miercoles' name="dia-semana" className="peer hidden" disabled />
+                                            <label htmlFor='Miercoles' id='LbMiercoles' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
         py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> Miercoles</label>
-                                    </div>
-                                    <div className='px-2 py-4'>
-                                        <input onChange={(e) => { cargarHoras(3) }} type="radio" id='Jueves' name="dia-semana" className="peer hidden" disabled />
-                                        <label htmlFor='Jueves' id='LbJueves' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
+                                        </div>
+                                        <div className='px-2 py-4'>
+                                            <input onChange={(e) => { cargarHoras(3) }} type="radio" id='Jueves' name="dia-semana" className="peer hidden" disabled />
+                                            <label htmlFor='Jueves' id='LbJueves' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
             py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> Jueves</label>
-                                    </div>
-                                    <div className='px-2 py-4'>
-                                        <input onChange={(e) => { cargarHoras(4) }} type="radio" id='Viernes' name="dia-semana" className="peer hidden" disabled />
-                                        <label htmlFor='Viernes' id='LbViernes' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
+                                        </div>
+                                        <div className='px-2 py-4'>
+                                            <input onChange={(e) => { cargarHoras(4) }} type="radio" id='Viernes' name="dia-semana" className="peer hidden" disabled />
+                                            <label htmlFor='Viernes' id='LbViernes' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
             py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> Viernes</label>
-                                    </div>
-                                    <div className='px-2 py-4'>
-                                        <input onChange={(e) => { cargarHoras(5) }} type="radio" id='Sabado' name="dia-semana" className="peer hidden" disabled />
-                                        <label htmlFor='Sabado' id='LbSabado' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
+                                        </div>
+                                        <div className='px-2 py-4'>
+                                            <input onChange={(e) => { cargarHoras(5) }} type="radio" id='Sabado' name="dia-semana" className="peer hidden" disabled />
+                                            <label htmlFor='Sabado' id='LbSabado' className="labeldsabilitado select-none cursor-pointer rounded-lg border-2 border-blue-500
             py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> Sabado</label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -316,7 +358,7 @@ export default function page() {
                                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-10 gap-4">
                                         {horas.map((item, index1) => (
                                             <div key={item[1]} className='px-2 py-4'>
-                                                {item[2] === "Disponible" ? (
+                                                {item[2] === 1 ? (
                                                     item[3] === "Presencial" ? (
                                                         <>
                                                             <input onChange={() => { setHoraSeleccionada(item[1]); mostrarBotton(true); }} type="radio" id={item[1]} name="Hora" className="peer hidden" />
@@ -406,6 +448,25 @@ export default function page() {
                             <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
                                 <div>Solo se pueden agendar 2 citas por semana.</div>
                                 <button onClick={() => { setShowM2citas(!showM2citas) }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                        <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {
+                showError && (
+                    <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                        <div className="flex w-96 shadow-lg rounded-lg">
+                            <div class="bg-yellow-600 py-4 px-6 rounded-l-lg flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="fill-current text-white" width="20" height="20"><path fill-rule="evenodd" d="M8.22 1.754a.25.25 0 00-.44 0L1.698 13.132a.25.25 0 00.22.368h12.164a.25.25 0 00.22-.368L8.22 1.754zm-1.763-.707c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0114.082 15H1.918a1.75 1.75 0 01-1.543-2.575L6.457 1.047zM9 11a1 1 0 11-2 0 1 1 0 012 0zm-.25-5.25a.75.75 0 00-1.5 0v2.5a.75.75 0 001.5 0v-2.5z"></path></svg>
+                            </div>
+                            <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                                <div>Ha ocurrido un error.</div>
+                                <button onClick={() => { setShowError(!showError) }}>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
                                         <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
                                     </svg>

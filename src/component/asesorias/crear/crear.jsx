@@ -29,13 +29,13 @@ function crear() {
     };
 
     const calcularNumeroDiaLunes = () => {
-        const fecha = new Date("04/08/2024");
+        const fecha = new Date();
         //fecha.setHours(3);
         let diaSemanas = fecha.getDay();
         const numeroDia = fecha.getDate();
         if (fecha.getHours() >= 18) diaSemanas = diaSemanas + 1
         setDiaSemana(diaSemanas)
-        setDiaLunes(numeroDia - diaSemanas + 1);
+        setDiaLunes(numeroDia - fecha.getDay() + 1);
     };
 
     const obtenerHoraActual = (dia, index) => {
@@ -43,11 +43,11 @@ function crear() {
         setDiaCreacion(dia[1]);
         const numeroDia = diasSemana[dia[0]];
         const fechaActual = new Date();
-        let hora = 0;
+        let hora = 0;/*
         fechaActual.setHours(3);
         fechaActual.setMinutes(0);
         fechaActual.setSeconds(0);
-        fechaActual.setMilliseconds(0);
+        fechaActual.setMilliseconds(0);*/
         if (numeroDia == fechaActual.getDay()) {
             hora = fechaActual.getHours()
             if (hora >= 1 && hora <= 2) {
@@ -59,7 +59,7 @@ function crear() {
         } else {
             hora = 6;
         }
-        for (let i = hora; i <= 20; i++) {
+        for (let i = hora; i <= 21; i++) {
             const dato = [`${i}:00`, `${i}:20`, `${i}:40`]
             setHoras(prevState => [...prevState, dato])
         }
@@ -118,22 +118,51 @@ function crear() {
         }
     }
 
+    const validarHoras = async (cantHoras) => {
+        const response = await fetch('http://localhost:3002/hora-semanal/profesor/1');
+        const data = await response.json();
+        if (response.ok) {
+            const horasAsignadas = data[0].horasAsignadas; 
+            const CantidadAsesorias = horasAsignadas * 4;
+            const fechaActual = new Date();
+            const fechaLunes = new Date(fechaActual);
+            fechaLunes.setDate(diaLunes)
+            const fechaSabado = new Date(fechaActual);
+            fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
+            fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
+            const fechaInicio = fechaLunes.toISOString().split('T')[0];
+            const fechaFin = fechaSabado.toISOString().split('T')[0];
+            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+            const data2 = await response2.json();
+            if (response2.ok) {
+                const asesoriasActual = data2.length + cantHoras;
+                console.log(CantidadAsesorias)
+                console.log(asesoriasActual)
+                console.log(asesoriasActual < CantidadAsesorias)
+                if (asesoriasActual < CantidadAsesorias) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     const crearCitas = async () => {
         const fecha = new Date()
         let estado = false;
         fecha.setDate(diaCreacion)
-        const fechaFormateada = format(fecha, 'MM/dd/yyyy')
+
+        const validarHoras=validarHoras(9)
         for (const elemento of horaSeleccionadas) {
             try {
                 const datos = {
-                    "fecha": fechaFormateada,
+                    "fecha": fecha,
                     "hora": elemento[0],
                     "estadoCita": 1,
                     "link": "",
                     "modificaciones": "",
                     "usuariocitaequipo": 1,
-                    "tipoCita":tipoCita
-                } 
+                    "tipoCita": tipoCita
+                }
                 console.log(datos)
                 const requestOptions = {
                     method: 'POST',
@@ -166,8 +195,9 @@ function crear() {
     }
 
     function formatTime(timeString) {
-        const formattedTime = format(new Date(`2000-01-01T${timeString}`), 'HH:mm');
-    return formattedTime.replace(/^0(\d)/, '$1');
+        const hora = timeString.split(':')[0] + ':' + timeString.split(':')[1];
+        const formattedTime = format(new Date(`2000-01-01T${hora}`), 'HH:mm');
+        return formattedTime.replace(/^0(\d)/, '$1');
     }
     const buscarCitas = async (dia) => {
         const fechaActual = new Date();
@@ -187,15 +217,15 @@ function crear() {
                 if (fecha.getDate() == dia[1]) {
                     console.log(data)
                     const fecha = new Date();
-                    fecha.setHours(3);
+                    /*fecha.setHours(3);
                     fecha.setMinutes(0);
                     fecha.setSeconds(0);
-                    fecha.setMilliseconds(0);
-                    const fechaHoyForma= format(new Date, 'dd/MM/yyyy'); 
-                    const fechaCitaForma= format(item.fecha,'dd/MM/yyyy'); 
-                    if (parseInt(item.hora.split(":")[0]) >= fecha.getHours() + 4 || fechaHoyForma!=fechaCitaForma) { 
+                    fecha.setMilliseconds(0);*/
+                    const fechaHoyForma = format(new Date, 'dd/MM/yyyy');
+                    const fechaCitaForma = format(item.fecha, 'dd/MM/yyyy');
+                    if (parseInt(item.hora.split(":")[0]) >= fecha.getHours() + 4 || fechaHoyForma != fechaCitaForma) {
                         const horas = formatTime(item.hora);
-                        const checkbox = document.getElementById(horas); 
+                        const checkbox = document.getElementById(horas);
                         const lbCheckbox = document.getElementById(`lb${horas}`);
                         setLabelCheck(prevState => [...prevState, [horas]])
                         lbCheckbox.classList.add("labeldsabilitado");
@@ -233,14 +263,14 @@ function crear() {
             <div>
                 <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
 
-                <div className=' justify-center  pt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:flex gap-4" '>
+                <div className=' justify-center  pt-8 flex gap-4" '>
                     <div className='px-2 py-4'>
                         <input onChange={() => { setTipoCita('1') }} defaultChecked type="radio" id='Virtual' name="Ubicacion" className=" peer hidden" />
                         <label htmlFor='Virtual' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-green-500 py-3 px-6 font-bold text-green-500 transition-colors duration-200 ease-in-out peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-200">Virtual</label>
                     </div>
 
                     <div className='px-2 py-4'>
-                        <input onChange={() => {  setTipoCita('2') }} type="radio" id='Presencial' name="Ubicacion" className=" peer hidden" />
+                        <input onChange={() => { setTipoCita('2') }} type="radio" id='Presencial' name="Ubicacion" className=" peer hidden" />
                         <label htmlFor='Presencial' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-indigo-500 py-3 px-6 font-bold text-indigo-500 transition-colors duration-200 ease-in-out peer-checked:bg-indigo-500 peer-checked:text-white peer-checked:border-indigo-200">Presencial</label>
                     </div>
                 </div>
@@ -248,17 +278,18 @@ function crear() {
             </div>
             <div className='pt-8'>
                 <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
-
-                <div className=' justify-center  pt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 xl:flex gap-4" '>
-                    {
-                        diasNumero.map((item, index) => (
-                            <div key={item} className='px-2 py-4'>
-                                <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
-                                <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500
+                <div class="justify-center flex pt-8">
+                    <div className='grid grid-cols-1 pl-14 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3   xl:flex gap-4'>
+                        {
+                            diasNumero.map((item, index) => (
+                                <div key={item} className='px-2 py-4'>
+                                    <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
+                                    <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500
             py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> {item} </label>
-                            </div>
-                        ))
-                    }
+                                </div>
+                            ))
+                        }
+                    </div>
                 </div>
             </div>
             <div className='pt-8'>

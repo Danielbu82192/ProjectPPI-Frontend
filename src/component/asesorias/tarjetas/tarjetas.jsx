@@ -8,7 +8,8 @@ function tarjetas() {
     const [citasDisponibles, setCitasDisponibles] = useState(true);
 
     function formatTime(timeString) {
-        const formattedTime = format(new Date(`2000-01-01T${timeString}`), 'h:mm');
+        const hora = timeString.split(':')[0] + ':' + timeString.split(':')[1];
+        const formattedTime = format(new Date(`2000-01-01T${hora}`), 'h:mm');
         return formattedTime.replace(/^0(\d)/, '$1');
     }
 
@@ -28,12 +29,14 @@ function tarjetas() {
                     const response2 = await fetch(`http://localhost:3002/equipo-ppi/1`);
                     if (response2.ok) {
                         const data2 = await response2.json();
-                        if (data2[0].canceladas != null) {
-                            setCitasDisponibles(true)
-                            const citasArray = Object.values(data2[0].canceladas).flatMap(cita => Array.isArray(cita) ? cita : [cita]);
-                            setCitas(citasArray)
-                            return
-                        } 
+                        if (data.length != 0) {
+                            if (data2[0].canceladas != null) {
+                                setCitasDisponibles(true)
+                                const citasArray = Object.values(data2[0].canceladas).flatMap(cita => Array.isArray(cita) ? cita : [cita]);
+                                setCitas(citasArray)
+                                return
+                            }
+                        }
                     }
                     setCitasDisponibles(false)
                 } else {

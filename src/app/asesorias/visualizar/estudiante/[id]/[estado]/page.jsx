@@ -15,17 +15,20 @@ function page({ params }) {
     const [tipoCita, setTipoCita] = useState([]);
     const [fecha, setFecha] = useState('');
     const [hora, setHora] = useState('');
+    const [salon, setSalon] = useState('');
     const router = useRouter();
 
     function formatDate(dateString) {
         return format(new Date(dateString), 'dd/MM/yyyy');
     }
     function formatTime(timeString) {
-        return format(new Date(`2000-01-01T${timeString}`), 'hh:mm a');
+        const hora = timeString.split(':')[0] + ':' + timeString.split(':')[1];
+        const formattedTime = format(new Date(`2000-01-01T${hora}`), 'HH:mm');
+        return formattedTime;
     }
     useEffect(() => {
-        const traerCita = async () => {  
-            if (params.estado=='true') {
+        const traerCita = async () => {
+            if (params.estado == 'true') {
                 const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${params.id}`);
                 const data = await response.json();
                 if (response.ok) {
@@ -35,9 +38,12 @@ function page({ params }) {
                     setHora(formatTime(data.hora))
                     setFecha(formatDate(data.fecha))
                     setTipoCita(data.tipoCita)
-                    setProfesor(data.usuariocitaequipo)
+                    setProfesor(data.usuariocitaequipo) 
+                    const response2 = await fetch(`http://localhost:3002/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
+                    const data2 = await response2.json(); 
+                    setSalon(data2[0].salon)
                 }
-            } else { 
+            } else {
                 const response = await fetch(`http://localhost:3002/equipo-ppi/1`);
                 const data = await response.json();
                 if (response.ok) {
@@ -141,42 +147,70 @@ function page({ params }) {
                         <h1 className='text-4xl font-bold text-center text-gray-600'>Cita de asesorías</h1>
                     </div>
                     <div className='p-5'>
-                        <div className={`p-10   ${estadoCita.id == 4 ?'lg:grid-cols-1 justify-center text-center':'grid grid-cols-1 lg:grid-cols-2'}`}>
-                            <div className="xl:ml-32">
-                                <div className="flex m-4 sm:m-10">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
-                                    <span className={`inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${estadoCita.id == 4 ?'bg-red-500':'bg-green-500'} text-white font-semibold rounded-full`}>
-                                        {estadoCita.nombre}
-                                    </span>
+                        <div className='grid grid-cols-1 lg:grid-cols-2'>
+                            <div className="xl:ml-0">
+                                <div className="m-4 sm:m-10 grid grid-cols-2">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
+                                    </div>
+                                    <div>
+                                        <span className={`inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${estadoCita.id == 4 ? 'bg-red-500' : 'bg-green-500'} text-white font-semibold rounded-full`}>
+                                            {estadoCita.nombre}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex m-4 sm:m-10">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Profesor:</h1>
-                                    <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {profesor.nombre}   </span>
+                                <div className="m-4 sm:m-10 grid grid-cols-2">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Profesor:</h1>  </div>
+                                    <div className='-mt-2'>
+                                        <span className="inline-block sm:mt-2 ml-2  sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500  ">
+                                            {profesor.nombre}   </span>
+                                    </div>
                                 </div>
-                                <div className="flex m-4 sm:m-10">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
-                                    <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {fecha}     </span>
+                                <div className="m-4 sm:m-10 grid grid-cols-2">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
+                                    </div>
+                                    <div>
+                                        <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
+                                            {fecha}     </span>
+                                    </div>
                                 </div>
-                                <div className="flex m-4 sm:m-10">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
-                                    <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {hora}     </span>
+                                <div className="m-4 sm:m-10 grid grid-cols-2">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
+                                    </div>
+                                    <div>
+                                        <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
+                                            {hora}     </span>
+                                    </div>
                                 </div>
-                                <div className="flex m-4 sm:m-10">
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Tipo:</h1>
-                                    <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {tipoCita.nombre}       </span>
+                                <div className="m-4 sm:m-10 grid grid-cols-2">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Tipo:</h1>
+                                    </div>
+                                    <div>
+                                        <span className="inline-block font-semibold text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ">
+                                            {tipoCita.nombre}       </span>
+                                    </div>
                                 </div>
-                                <div className="flex m-4 sm:m-10">
-                                    {tipoCita.id == 1 ? (
-                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Enlace:</h1>
-                                    ) : (
-                                        <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Ubicación:</h1>
-                                    )}
-                                    <span className="inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 text-lg">
-                                        {cita.link}       </span>
+                                <div className="m-4 sm:m-10 grid grid-cols-2">
+                                    <div>
+                                        {tipoCita.id == 1 ? (
+                                            <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Enlace:</h1>
+                                        ) : (
+                                            <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Ubicación:</h1>
+                                        )}
+                                    </div><div>
+                                        {tipoCita.id == 1 ? (
+                                            <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
+                                                {cita.link}       </span>
+                                        ) : (
+                                            <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
+                                                {salon}       </span>
+                                        )}
+
+                                    </div>
                                 </div>
                             </div>
                             <div className="justify-center  lg:mt-20 xl:mt-0">

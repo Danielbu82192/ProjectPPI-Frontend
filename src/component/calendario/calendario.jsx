@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 
 function calendario() {
-    const matriz = Array.from({ length: 7 }, () => Array.from({ length: 42 }));
+    const matriz = Array.from({ length: 7 }, () => Array.from({ length: 49 }));
     const [dias, setDias] = useState([]);
     const [showAlert, setShowAlert] = useState(false);
     const [showNoAseaorias, setShowNoAseaorias] = useState(false);
@@ -34,7 +34,7 @@ function calendario() {
     }
 
     const Login = async () => {
-        const response = await fetch(`http://localhost:3002/usuario/juan@gmail.com/123456789`);
+        const response = await fetch(`http://localhost:3002/usuario/Juan@gmail.com/123456789`);
         const data = await response.json();
         if (response.ok) {
             idAsesor = data[0].id;
@@ -53,14 +53,14 @@ function calendario() {
     const busacrCitas = async () => {
         const fechaActual = new Date();
         const fechaLunes = new Date(fechaActual);
+        fechaLunes.setDate(numeroDiaLunes)
         const fechaSabado = new Date(fechaActual);
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
-        const fechaInicio = fechaLunes.toISOString().split('T')[0];
+        const fechaInicio = fechaLunes.toISOString().split('T')[0]; 
         const fechaFin = fechaSabado.toISOString().split('T')[0];
         const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
-        const data = await response.json();
-        console.log(data)
+        const data = await response.json();     
         if (response.ok) {
             console.log(data)
             data.map((item) => {
@@ -76,11 +76,17 @@ function calendario() {
                 const div = document.getElementById(id);
                 if (div) {
                     if (item.estadoCita.id == 1) {
-                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-gray-400 hover:bg-gray-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.estadoCita.nombre}</button>`;
-
+                        if (item.tipoCita.id == 1) {
+                            div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-green-300 hover:bg-green-400 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.estadoCita.nombre}</button>`;
+                        } else if (item.tipoCita.id == 2) {
+                            div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-indigo-300 hover:bg-indigo-400 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.estadoCita.nombre}</button>`;
+                        }
                     } else if (item.estadoCita.id == 2) {
-                        console.log(item)
-                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
+                        if (item.tipoCita.id == 1) {
+                            div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-green-500 hover:bg-green-600 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
+                        } else if (item.tipoCita.id == 2) {
+                            div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-indigo-500 hover:bg-indigo-600 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
+                        }
                     }
                     const button = document.getElementById(`button-${item.id}`);
                     button.addEventListener('click', () => visualizarCita(item.id));
@@ -166,7 +172,7 @@ function calendario() {
                                 cont = 0
                             }  // Incrementar cont para obtener el índice correcto en el array `dias`
                             return (
-                                <div key={indiceColumna}   id={horasid + '/' + diasConst[cont + 1] + ' ' + (numeroDiaLunes + cont)} className='border-t border-l border-gray-300'>
+                                <div key={indiceColumna} id={horasid + '/' + diasConst[cont + 1] + ' ' + (numeroDiaLunes + cont)} className='border-t border-l border-gray-300'>
 
                                 </div>
                             );
