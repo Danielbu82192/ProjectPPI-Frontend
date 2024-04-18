@@ -22,11 +22,11 @@ function tarjetas() {
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
             const fechaInicio = fechaLunes.toISOString().split('T')[0];
             const fechaFin = fechaSabado.toISOString().split('T')[0];
-            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/Equipo/${fechaInicio}/${fechaFin}/1`);
+            const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/Equipo/${fechaInicio}/${fechaFin}/1`);
             const data = await response.json();
             if (response.ok) {
                 if (data.length == 0) {
-                    const response2 = await fetch(`http://localhost:3002/equipo-ppi/1`);
+                    const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/equipo-ppi/1`);
                     if (response2.ok) {
                         const data2 = await response2.json();
                         if (data.length != 0) {
@@ -69,7 +69,7 @@ function tarjetas() {
                         {citas.map((item, index) => (
                             <div key={index} className=' my-4 mx-4'>
                                 <a
-                                    href={item.estadoCita.id === 2 ? `/asesorias/visualizar/estudiante/${item.id}/true` : `/asesorias/visualizar/estudiante/${item.id}/false`}
+                                    href={`/asesorias/visualizar/estudiante/${item.id}/${item.estadoCita.id}`}
                                     className="relative block overflow-hidden rounded-lg border-2 border-gray-200 p-4 sm:p-6 lg:p-8"
                                 ><span
                                     className={`absolute inset-x-0 bottom-0 h-2 bg-gradient-to-r ${item.estadoCita.id === 2
@@ -78,7 +78,9 @@ function tarjetas() {
                                             ? 'from-indigo-500 via-indigo-400 to-indigo-500'
                                             : item.estadoCita.id === 4
                                                 ? 'from-red-500 via-red-400 to-red-500'
-                                                : 'from-stone-500 via-stone-400 to-stone-500'
+                                                : item.estadoCita.id === 5
+                                                    ? 'from-red-600 via-red-500 to-red-600'
+                                                    : 'from-stone-500 via-stone-400 to-stone-500'
                                         }`}
                                 ></span>
                                     <div>

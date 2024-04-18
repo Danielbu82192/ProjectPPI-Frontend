@@ -28,8 +28,8 @@ function page({ params }) {
     }
     useEffect(() => {
         const traerCita = async () => {
-            if (params.estado == 'true') {
-                const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${params.id}`);
+            if (params.estado == '2'||params.estado == '5') {
+                const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${params.id}`);
                 const data = await response.json();
                 if (response.ok) {
                     setCita(data)
@@ -39,12 +39,12 @@ function page({ params }) {
                     setFecha(formatDate(data.fecha))
                     setTipoCita(data.tipoCita)
                     setProfesor(data.usuariocitaequipo) 
-                    const response2 = await fetch(`http://localhost:3002/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
+                    const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
                     const data2 = await response2.json(); 
                     setSalon(data2[0].salon)
                 }
-            } else {
-                const response = await fetch(`http://localhost:3002/equipo-ppi/1`);
+            } else if (params.estado == '4'){
+                const response = await fetch(`https://projectppi-backend-production.up.railway.app/equipo-ppi/1`);
                 const data = await response.json();
                 if (response.ok) {
                     const canceladas = data[0].canceladas;
@@ -104,8 +104,8 @@ function page({ params }) {
 
         try {
             const [responseCita, responseEquipo] = await Promise.allSettled([
-                fetch('http://localhost:3002/citas-asesoria-ppi/' + id, requestOptionsCita),
-                fetch('http://localhost:3002/equipo-ppi/1', requestOptionsEquipo)
+                fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + id, requestOptionsCita),
+                fetch('https://projectppi-backend-production.up.railway.app/equipo-ppi/1', requestOptionsEquipo)
             ]);
 
             if (responseCita.status === 'fulfilled' && responseEquipo.status === 'fulfilled') {
@@ -154,7 +154,7 @@ function page({ params }) {
                                         <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
                                     </div>
                                     <div>
-                                        <span className={`inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${estadoCita.id == 4 ? 'bg-red-500' : 'bg-green-500'} text-white font-semibold rounded-full`}>
+                                        <span className={`inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${estadoCita.id == 4||estadoCita.id == 5 ? 'bg-red-500' : 'bg-green-500'} text-white font-semibold rounded-full`}>
                                             {estadoCita.nombre}
                                         </span>
                                     </div>
@@ -214,7 +214,7 @@ function page({ params }) {
                                 </div>
                             </div>
                             <div className="justify-center  lg:mt-20 xl:mt-0">
-                                {estadoCita.id == 4 ? (null) : (
+                                {estadoCita.id != 2 ? (null) : (
                                     <button onClick={() => { cancelarCita(cita.id) }} class="text-white xl:mt-36 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
 
                                 )}

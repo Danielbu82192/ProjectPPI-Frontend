@@ -34,7 +34,7 @@ function calendario() {
     }
 
     const Login = async () => {
-        const response = await fetch(`http://localhost:3002/usuario/Juan@gmail.com/123456789`);
+        const response = await fetch(`https://projectppi-backend-production.up.railway.app/usuario/Juan@gmail.com/123456789`);
         const data = await response.json();
         if (response.ok) {
             idAsesor = data[0].id;
@@ -57,10 +57,10 @@ function calendario() {
         const fechaSabado = new Date(fechaActual);
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
-        const fechaInicio = fechaLunes.toISOString().split('T')[0]; 
+        const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
-        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
-        const data = await response.json();     
+        const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+        const data = await response.json();
         if (response.ok) {
             console.log(data)
             data.map((item) => {
@@ -71,8 +71,7 @@ function calendario() {
                 const fechaCompleta = new Date(item.fecha);
                 const diaSemana = fechaCompleta.getDay();
                 const numeroDia = fechaCompleta.getDate();
-                const id = `${horaFormateada}:${minutosFormateados}/${diasConst[diaSemana]} ${numeroDia}`;
-
+                const id = `${horaFormateada}:${minutosFormateados}/${diasConst[diaSemana]} ${numeroDia}`; 
                 const div = document.getElementById(id);
                 if (div) {
                     if (item.estadoCita.id == 1) {
@@ -87,6 +86,10 @@ function calendario() {
                         } else if (item.tipoCita.id == 2) {
                             div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-indigo-500 hover:bg-indigo-600 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
                         }
+                    } else if (item.estadoCita.id == 4||item.estadoCita.id == 5) {
+                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
+                    } else if (item.estadoCita.id == 3) {
+                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-blue-400 hover:bg-blue-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
                     }
                     const button = document.getElementById(`button-${item.id}`);
                     button.addEventListener('click', () => visualizarCita(item.id));

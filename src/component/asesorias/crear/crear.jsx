@@ -10,6 +10,7 @@ function crear() {
     const [tipoCita, setTipoCita] = useState('1')
     const [showCorrecto, setShowCorrecto] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
+    const [showHorasCompletas, setShowHorasCompletas] = useState(false);
     const [estadoCrear, setEstadoCrear] = useState(false)
     const [diaCreacion, setDiaCreacion] = useState('')
     const [diaSemana, setDiaSemana] = useState('');
@@ -17,6 +18,7 @@ function crear() {
     const [horaSeleccionadas, setHoraSeleccionadas] = useState([]);
     const [diaLunes, setDiaLunes] = useState('');
     const [diasNumero, setDiaNumero] = useState([]);
+    const [horasPendientes, setHorasPendientes] = useState('');
     const [diasConst, setDiasConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const diasSemana = {
         'Lunes': 1,
@@ -69,7 +71,6 @@ function crear() {
 
     useEffect(() => {
         calcularNumeroDiaLunes();
-
     }, []);
 
     useEffect(() => {
@@ -119,10 +120,10 @@ function crear() {
     }
 
     const validarHoras = async (cantHoras) => {
-        const response = await fetch('http://localhost:3002/hora-semanal/profesor/1');
+        const response = await fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/1');
         const data = await response.json();
         if (response.ok) {
-            const horasAsignadas = data[0].horasAsignadas; 
+            const horasAsignadas = data[0].horasAsignadas;
             const CantidadAsesorias = horasAsignadas * 4;
             const fechaActual = new Date();
             const fechaLunes = new Date(fechaActual);
@@ -132,66 +133,68 @@ function crear() {
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
             const fechaInicio = fechaLunes.toISOString().split('T')[0];
             const fechaFin = fechaSabado.toISOString().split('T')[0];
-            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+            const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
             const data2 = await response2.json();
             if (response2.ok) {
                 const asesoriasActual = data2.length + cantHoras;
-                console.log(CantidadAsesorias)
-                console.log(asesoriasActual)
-                console.log(asesoriasActual < CantidadAsesorias)
                 if (asesoriasActual < CantidadAsesorias) {
-                    return true;
+                    return (CantidadAsesorias - asesoriasActual);
                 }
             }
         }
-        return false;
+        return (false);
     }
+
     const crearCitas = async () => {
         const fecha = new Date()
         let estado = false;
         fecha.setDate(diaCreacion)
 
-        const validarHoras=validarHoras(9)
-        for (const elemento of horaSeleccionadas) {
-            try {
-                const datos = {
-                    "fecha": fecha,
-                    "hora": elemento[0],
-                    "estadoCita": 1,
-                    "link": "",
-                    "modificaciones": "",
-                    "usuariocitaequipo": 1,
-                    "tipoCita": tipoCita
-                }
-                console.log(datos)
-                const requestOptions = {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(datos)
-                };
-                const response = await fetch('http://localhost:3002/citas-asesoria-ppi', requestOptions);
-                if (response.ok) {
-                    estado = true;
-                } else {
+        const valHoras = await validarHoras(horaSeleccionadas.length)
+        if (valHoras == false) {
+            setShowHorasCompletas(true)
+        } else {
+            setHorasPendientes(valHoras);
+            for (const elemento of horaSeleccionadas) {
+                try {
+                    const datos = {
+                        "fecha": fecha,
+                        "hora": elemento[0],
+                        "estadoCita": 1,
+                        "link": "",
+                        "modificaciones": "",
+                        "usuariocitaequipo": 1,
+                        "tipoCita": tipoCita
+                    }
+                    console.log(datos)
+                    const requestOptions = {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datos)
+                    };
+                    const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi', requestOptions);
+                    if (response.ok) {
+                        estado = true;
+                    } else {
+                        estado = false;
+                    }
+
+                } catch (error) {
+                    console.error('Error al realizar la solicitud:', error);
                     estado = false;
                 }
+            }
+            if (estado) {
+                setShowCorrecto(true);
+                setHoraSeleccionadas([]);
+                setTimeout(() => {
+                    window.location.reload(); // Recarga la página
+                }, 2000);
 
-            } catch (error) {
-                console.error('Error al realizar la solicitud:', error);
-                estado = false;
+            } else {
+                setShowAlert(true);
             }
         }
-        if (estado) {
-            setShowCorrecto(true);
-            setHoraSeleccionadas([]);
-            setTimeout(() => {
-                window.location.reload(); // Recarga la página
-            }, 2000);
-
-        } else {
-            setShowAlert(true);
-        }
-
     }
 
     function formatTime(timeString) {
@@ -208,7 +211,7 @@ function crear() {
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
 
-        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+        const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
         const data = await response.json();
         if (response.ok) {
             setLabelCheck([])
@@ -248,6 +251,15 @@ function crear() {
             return () => clearTimeout(timer);
         }
     }, [showAlert]);
+    useEffect(() => {
+        if (showHorasCompletas) {
+            const timer = setTimeout(() => {
+                setShowHorasCompletas(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showHorasCompletas]);
 
     useEffect(() => {
         if (showCorrecto) {
@@ -266,7 +278,7 @@ function crear() {
                 <div className=' justify-center  pt-8 flex gap-4" '>
                     <div className='px-2 py-4'>
                         <input onChange={() => { setTipoCita('1') }} defaultChecked type="radio" id='Virtual' name="Ubicacion" className=" peer hidden" />
-                        <label htmlFor='Virtual' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-green-500 py-3 px-6 font-bold text-green-500 transition-colors duration-200 ease-in-out peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-200">Virtual</label>
+                        <label htmlFor='Virtual' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-green-500 py-3 px-10 font-bold text-green-500 transition-colors duration-200 ease-in-out peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-200">Virtual</label>
                     </div>
 
                     <div className='px-2 py-4'>
@@ -342,6 +354,25 @@ function crear() {
                         <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
                             <div>Creados correctamente.</div>
                             <button onClick={() => { setShowCorrecto(!showCorrecto) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                    <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showHorasCompletas && (
+                <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                    <div className="flex w-96 shadow-lg rounded-lg">
+                        <div className="bg-orange-600 py-4 px-6 rounded-l-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="fill-current text-white" width="20" height="20">
+                                <path fillRule="evenodd" d="M4.47.22A.75.75 0 015 0h6a.75.75 0 01.53.22l4.25 4.25c.141.14.22.331.22.53v6a.75.75 0 01-.22.53l-4.25 4.25A.75.75 0 0111 16H5a.75.75 0 01-.53-.22L.22 11.53A.75.75 0 010 11V5a.75.75 0 01.22-.53L4.47.22zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5H5.31zM8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"></path>
+                            </svg>
+                        </div>
+                        <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                            <div>Has reservado todas las horas disponibles para esta semana.</div>
+                            <button onClick={() => { setShowHorasCompletas(!showHorasCompletas) }}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
                                     <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
                                 </svg>

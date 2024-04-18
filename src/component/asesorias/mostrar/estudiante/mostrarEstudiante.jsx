@@ -6,7 +6,7 @@ function mostrarEstudiante({ citaid }) {
     const [cita,setCita]=useState([]);
     useEffect(() => {
         const traerCita = async () => {
-            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${citaid}`);
+            const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${citaid}`);
             const data = await response.json();
             if (response.ok) {
                 setCita(data)

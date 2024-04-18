@@ -22,7 +22,7 @@ export default function page() {
     const [horaActual, setHorasActual] = useState([])
     useEffect(() => {
         const buscarAsesores = async () => {
-            const response = await fetch(`http://localhost:3002/usuario/asesor`);
+            const response = await fetch(`https://projectppi-backend-production.up.railway.app/usuario/asesor`);
             const data = await response.json();
             if (response.ok) {
                 setAsesores(data);
@@ -61,7 +61,7 @@ export default function page() {
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
 
-        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${asesor}`);
+        const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${asesor}`);
         const data = await response.json();
         if (response.ok) {
             console.log(data)
@@ -203,7 +203,7 @@ export default function page() {
                 body: JSON.stringify(datos)
             };
             console.log(datos)
-            const response = await fetch('http://localhost:3002/citas-asesoria-ppi/' + horaSeleccionada, requestOptions);
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptions);
             if (response.ok) {
                 setEstadoAgendar(false)
                 setShowCorrecto(true);
@@ -254,7 +254,7 @@ export default function page() {
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 6)); // Establece la fecha al próximo lunes
             const fechaInicio = fechaLunes.toISOString().split('T')[0];
             const fechaFin = fechaSabado.toISOString().split('T')[0];
-            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/Equipo/${fechaInicio}/${fechaFin}/1`);
+            const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/Equipo/${fechaInicio}/${fechaFin}/1`);
             const data = await response.json();
             if (response.ok) {
                 if (data.length == 0) {
