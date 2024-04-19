@@ -28,7 +28,7 @@ function page({ params }) {
     }
     useEffect(() => {
         const traerCita = async () => {
-            if (params.estado == '2'||params.estado == '5') {
+            if (params.estado == '2' || params.estado == '5' || params.estado == '6') {
                 const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${params.id}`);
                 const data = await response.json();
                 if (response.ok) {
@@ -38,12 +38,12 @@ function page({ params }) {
                     setHora(formatTime(data.hora))
                     setFecha(formatDate(data.fecha))
                     setTipoCita(data.tipoCita)
-                    setProfesor(data.usuariocitaequipo) 
+                    setProfesor(data.usuariocitaequipo)
                     const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
-                    const data2 = await response2.json(); 
+                    const data2 = await response2.json();
                     setSalon(data2[0].salon)
                 }
-            } else if (params.estado == '4'){
+            } else if (params.estado == '4') {
                 const response = await fetch(`https://projectppi-backend-production.up.railway.app/equipo-ppi/1`);
                 const data = await response.json();
                 if (response.ok) {
@@ -154,7 +154,7 @@ function page({ params }) {
                                         <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
                                     </div>
                                     <div>
-                                        <span className={`inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${estadoCita.id == 4||estadoCita.id == 5 ? 'bg-red-500' : 'bg-green-500'} text-white font-semibold rounded-full`}>
+                                        <span className={`inline-block mt-1 sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${estadoCita.id == 4 || estadoCita.id == 5 ? 'bg-red-500' : estadoCita.id == 6 ? 'bg-amber-500' : 'bg-green-500'} text-white font-semibold rounded-full`}>
                                             {estadoCita.nombre}
                                         </span>
                                     </div>
@@ -212,6 +212,12 @@ function page({ params }) {
 
                                     </div>
                                 </div>
+                                {estadoCita.id == 5 ? (
+                                    <div className="  sm:m-10 grid grid-cols-2">
+                                        <button onClick={() => { router.push('/asesorias/visualizar/estudiante/' + cita.modificaciones+'/6'); }} class="text-white xl:mt-4 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Nueva cita</button>
+                                    </div>
+                                ) : (null)
+                                }
                             </div>
                             <div className="justify-center  lg:mt-20 xl:mt-0">
                                 {estadoCita.id != 2 ? (null) : (

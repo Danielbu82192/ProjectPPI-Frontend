@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Mostrar from '@/component/asesorias/mostrar/mostrarAs'
 import { format } from 'date-fns';
 import { useRouter } from "next/navigation";
+import { data } from 'autoprefixer';
 
 function page({ params }) {
 
@@ -38,10 +39,10 @@ function page({ params }) {
     const [showCorrecto, setShowCorrecto] = useState(false);
     const [showOcupado, setShowOcupado] = useState(false);
     const [cancelar, setCancelar] = useState(false);
-    const [fechaCancelar, setFechaCancelar] = useState('');
-    const [horaCancelar, setHoraCancelar] = useState('');
-    const [minCancelar, setMinCancelar] = useState('');
-    const [diaCancelar, setDiaCancelar] = useState('');
+    const [showCamposVacios, setShowCamposVacios] = useState(false);
+    const [horaCancelar, setHoraCancelar] = useState(0);
+    const [minCancelar, setMinCancelar] = useState(-1);
+    const [diaCancelar, setDiaCancelar] = useState(0);
     const router = useRouter();
     const calcularNumeroDiaLunes = (fecha) => {
         const diaSemana = fecha.getDay();
@@ -138,6 +139,16 @@ function page({ params }) {
             return () => clearTimeout(timer);
         }
     }, [showACampos]);
+
+    useEffect(() => {
+        if (showCamposVacios) {
+            const timer = setTimeout(() => {
+                setShowCamposVacios(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showCamposVacios]);
     useEffect(() => {
         if (new Date().getDate() == numeroDia) {
             setHoraInicio(new Date().getHours() + 4)
@@ -234,58 +245,122 @@ function page({ params }) {
             }
         }
     }
-
     const cancelarCita = async (id) => {
-        const response = await fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/1');
-        const data = await response.json();
-        let datos = {}
-        const ids = cita.id
-        if (response.ok) {
-            if (data[0].horasPendientes.length == null) {
-                datos = {
-                    "horasPendientes": { ids: cita }
-                };
+        if (diaCancelar != 0 && horaCancelar != 0 && minCancelar != -1) {
+            const FechaCancelar = new Date();
+            FechaCancelar.setDate(diaCancelar);
+            const Fecha = format(FechaCancelar, 'yyyy-MM-dd');
+            const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
+            const data2 = await response2.json();
+            if (data2.length != 0) {
+                setShowOcupado(true)
+                return
+            }
+            const FechaActual = new Date();
+            const FechaSabado = new Date();
+            FechaSabado.setDate(FechaActual.getDate() - (FechaActual.getDay() - 7))
+            let datosCrear={} 
+            if (FechaSabado.getDate() < FechaCancelar.getDate()) {
+                datosCrear = {
+                    "fecha": FechaCancelar,
+                    "hora": `${horaCancelar}:${minCancelar}`,
+                    "estadoCita": 6,
+                    "link": "",
+                    "modificaciones": "",
+                    "usuariocitaequipo": 1,
+                    "tipoCita": tipoCita.id,
+                    "equipocita": equipo.id
+                }
+            }else{ 
+                datosCrear = {
+                    "fecha": FechaCancelar,
+                    "hora": `${horaCancelar}:${minCancelar}`,
+                    "estadoCita": 2,
+                    "link": "",
+                    "modificaciones": "",
+                    "usuariocitaequipo": 1,
+                    "tipoCita": tipoCita.id,
+                    "equipocita": equipo.id
+                }
+            } 
+            const requestOptions = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datosCrear)
+            };
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi', requestOptions);
+            if (response.ok) {
+                const response = await fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/1');
+                const data = await response.json();
+                const response3 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
+                if (!response3.ok) {
+                    showAlert(true)
+                    return;
+                }
+                const citaNueva = await response3.json();
+                let datos = {}
+                const ids = cita.id
+                if (response.ok) {
+                    const horasPendientes=data[0].horasPendientes; 
+                    if (Object.keys(horasPendientes).length == null||Object.keys(horasPendientes).length == 0) {
+                        datos = {
+                            "horasPendientes": {
+                                [Fecha]: {
+                                    "cancelada": cita,
+                                    "nueva": citaNueva[0]
+                                }
+                            }
+                        };
+                    } else {
+                        const citaCanceladas = data[0].horasPendientes
+                        const nuevaCita = {
+                            ...citaCanceladas,
+                            [Fecha]: {
+                                "cancelada": cita,
+                                "nueva": citaNueva[0]
+                            }
+                        }
+                        datos = {
+                            "horasPendientes": nuevaCita
+                        };
+                    }
+                    const dataCita = {
+                        "estadoCita": 5,
+                        "modificaciones": citaNueva[0].id
+                    };
+                    const requestOptionsCita = {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dataCita)
+                    };
+                    const requestOptionsEquipo = {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datos)
+                    };
+                    try {
+                        const [responseCita, responseEquipo] = await Promise.allSettled([
+                            fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + id, requestOptionsCita),
+                            fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/' + data[0].id, requestOptionsEquipo)
+                        ]);
+ 
+                        if (responseCita.status === 'fulfilled' && responseEquipo.status === 'fulfilled') {
+                            setShowCorrecto(true);
+                            setTimeout(() => {
+                                router.push('/asesorias/visualizar/asesor');
+                            }, 2000);
+                        } else {
+                            setShowAlert(true);
+                        }
+                    } catch (error) {
+                        setShowAlert(true);
+                    }
+                }
             } else {
-                const citaCanceladas = data[0].horasPendientes
-                const nuevaCita = {
-                    ...citaCanceladas,
-                    [ids]: cita
-
-                }
-                datos = {
-                    "horasPendientes": nuevaCita
-                };
-            }
-            const dataCita = {
-                "estadoCita": 4
-            };
-            const requestOptionsCita = {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataCita)
-            };
-            const requestOptionsEquipo = {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            };
-            try {
-                const [responseCita, responseEquipo] = await Promise.allSettled([
-                    fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + id, requestOptionsCita),
-                    fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/' + data[0].id, requestOptionsEquipo)
-                ]);
-
-                if (responseCita.status === 'fulfilled' && responseEquipo.status === 'fulfilled') {
-                    setShowCorrecto(true);
-                    setTimeout(() => {
-                        router.push('/asesorias/visualizar/asesor');
-                    }, 2000);
-                } else {
-                    setShowAlert(true);
-                }
-            } catch (error) {
-                setShowAlert(true);
-            }
+                setShowAlert(true)
+            } 
+        } else {
+            setShowCamposVacios(true)
         }
     }
     useEffect(() => {
@@ -438,7 +513,7 @@ function page({ params }) {
                                     <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
                                 </div>
                                 <div className='-mt-2'>
-                                    <span className={`inline-block mt-1 text-2xl sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${citaEstado.id == 2 ? (`bg-emerald-500`) : citaEstado.id == 1 ? (`bg-gray-500`) : citaEstado.id == 4 ? (`bg-red-500`) : citaEstado.id == 3 ? (`bg-indigo-500`) : (null)} bg-emerald-500 text-white font-semibold rounded-full`}>
+                                    <span className={`inline-block mt-1 text-2xl sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 ${citaEstado.id == 2 ? (`bg-emerald-500`) : citaEstado.id == 1 ? (`bg-gray-500`) : citaEstado.id == 4 ? (`bg-red-500`) : citaEstado.id == 5 ? (`bg-red-500`) : citaEstado.id == 3 ? (`bg-indigo-500`) : (null)} bg-emerald-500 text-white font-semibold rounded-full`}>
                                         {citaEstado.nombre}
                                     </span>
                                 </div>
@@ -513,7 +588,14 @@ function page({ params }) {
                                     ))}
                                 </div>
                             </div>
+                            {citaEstado.id == 5 ? (
+                                <div className="  sm:m-10 grid grid-cols-2">
+                                    <button onClick={() => { router.push('/asesorias/visualizar/asesor/' + cita.modificaciones); }} class="text-white xl:mt-4 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Nueva cita</button>
+                                </div>
+                            ) : (null)
+                            }
                         </div>
+
 
                         {cancelar ? (<div className='justify-center  lg:mt-20 xl:mt-10'>
                             <span className='text-2xl sm:text-4xl font-bold text-gray-600'> Seleccione la nueva fecha para su agendamiento.</span>
@@ -524,19 +606,20 @@ function page({ params }) {
                                 <div>
 
                                     <select value={diaCancelar} onChange={(e) => { setDiaCancelar(e.target.value) }} className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
-                                    > 
-                                            {semanaCancelar.map((parte, index) => (
-                                                <>
-                                                    {index === 1 && <option disabled>--------- Siguiente semana ---------</option>}
-                                                    {parte.map((dia, i) => (
-                                                        index === 0 ? (
-                                                            <option key={numeroDiaLunes + i+1} value={numeroDiaLunes + index}>{dia} {numeroDiaLunes + i+1}</option>
-                                                        ) : (
-                                                            <option key={numeroDiaLunes + i + (8-new Date().getDay())} value={numeroDiaLunes + index}>{dia} {numeroDiaLunes + i + (8-new Date().getDay())}</option>
-                                                        )
-                                                    ))}
-                                                </>
-                                            ))} 
+                                    >
+                                        <option disabled selected value="0">Seleccione el dia</option>
+                                        {semanaCancelar.map((parte, index) => (
+                                            <>
+                                                {index === 1 && <option disabled>--------- Siguiente semana ---------</option>}
+                                                {parte.map((dia, i) => (
+                                                    index === 0 ? (
+                                                        <option key={numeroDiaLunes + i + 1} value={numeroDiaLunes + i + 1}>{dia} {numeroDiaLunes + i + 1}</option>
+                                                    ) : (
+                                                        <option key={numeroDiaLunes + i + (8 - new Date().getDay())} value={numeroDiaLunes + i + (8 - new Date().getDay())}>{dia} {numeroDiaLunes + i + (8 - new Date().getDay())}</option>
+                                                    )
+                                                ))}
+                                            </>
+                                        ))}
                                     </select>
 
                                 </div>
@@ -547,14 +630,15 @@ function page({ params }) {
                                 </div>
                                 <div className='flex'>
 
-                                    <><select value={horaConst} onChange={(e) => { setHoraCancelar(e.target.value) }} id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                        <option value={horaFija} selected>{horaFija}</option>
-                                        {Array.from({ length: horaFin }, (_, i) => i + horaInicio).map(hour => (
+                                    <><select value={horaCancelar} onChange={(e) => { setHoraCancelar(e.target.value) }} id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+                                        <option value="0" disabled selected>Hora</option>
+                                        {Array.from({ length: 18 }, (_, i) => i + 6).map(hour => (
                                             <option key={hour} value={hour.toString().padStart(2, '0')}>{hour.toString().padStart(2, '0')}</option>
                                         ))}
                                     </select>
                                         <select value={minCancelar} onChange={(e) => { setMinCancelar(e.target.value) }} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
 
+                                            <option value="-1">Minutos</option>
                                             <option value="00">00</option>
                                             <option value="20">20</option>
                                             <option value="40">40</option>
@@ -598,6 +682,25 @@ function page({ params }) {
                 </div>
             </div>
         )
+            }{showCamposVacios && (
+                <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                    <div className="flex w-96 shadow-lg rounded-lg">
+                        <div className="bg-red-600 py-4 px-6 rounded-l-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="fill-current text-white" width="20" height="20">
+                                <path fillRule="evenodd" d="M4.47.22A.75.75 0 015 0h6a.75.75 0 01.53.22l4.25 4.25c.141.14.22.331.22.53v6a.75.75 0 01-.22.53l-4.25 4.25A.75.75 0 0111 16H5a.75.75 0 01-.53-.22L.22 11.53A.75.75 0 010 11V5a.75.75 0 01.22-.53L4.47.22zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5H5.31zM8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"></path>
+                            </svg>
+                        </div>
+                        <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                            <div>Los campos deben ser llenados correctamente</div>
+                            <button onClick={() => { setShowCamposVacios(!showCamposVacios) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                    <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )
             }
             {showCorrecto && (
                 <div className="fixed bottom-0 right-0 mb-8 mr-8">

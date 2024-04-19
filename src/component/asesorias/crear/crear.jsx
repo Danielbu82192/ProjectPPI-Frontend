@@ -17,7 +17,9 @@ function crear() {
     const [horas, setHoras] = useState([]);
     const [horaSeleccionadas, setHoraSeleccionadas] = useState([]);
     const [diaLunes, setDiaLunes] = useState('');
+    const [showCitasPendientes, setShowCitasPendientes] = useState(false)
     const [diasNumero, setDiaNumero] = useState([]);
+    const [citasPendientes, setCitasPendientes] = useState([])
     const [horasPendientes, setHorasPendientes] = useState('');
     const [diasConst, setDiasConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const diasSemana = {
@@ -32,7 +34,8 @@ function crear() {
 
     const calcularNumeroDiaLunes = () => {
         const fecha = new Date();
-        //fecha.setHours(3);
+        /*fecha.setDate(22)
+        fecha.setHours(3);*/
         let diaSemanas = fecha.getDay();
         const numeroDia = fecha.getDate();
         if (fecha.getHours() >= 18) diaSemanas = diaSemanas + 1
@@ -45,11 +48,12 @@ function crear() {
         setDiaCreacion(dia[1]);
         const numeroDia = diasSemana[dia[0]];
         const fechaActual = new Date();
-        let hora = 0;/*
+       /* fechaActual.setDate(22)
         fechaActual.setHours(3);
         fechaActual.setMinutes(0);
         fechaActual.setSeconds(0);
         fechaActual.setMilliseconds(0);*/
+        let hora = 0;
         if (numeroDia == fechaActual.getDay()) {
             hora = fechaActual.getHours()
             if (hora >= 1 && hora <= 2) {
@@ -69,9 +73,7 @@ function crear() {
 
     };
 
-    useEffect(() => {
-        calcularNumeroDiaLunes();
-    }, []);
+
 
     useEffect(() => {
         setDiaNumero([])
@@ -126,6 +128,7 @@ function crear() {
             const horasAsignadas = data[0].horasAsignadas;
             const CantidadAsesorias = horasAsignadas * 4;
             const fechaActual = new Date();
+            //fechaActual.setDate(22)
             const fechaLunes = new Date(fechaActual);
             fechaLunes.setDate(diaLunes)
             const fechaSabado = new Date(fechaActual);
@@ -147,6 +150,7 @@ function crear() {
 
     const crearCitas = async () => {
         const fecha = new Date()
+        fechaActual.setDate(22)
         let estado = false;
         fecha.setDate(diaCreacion)
 
@@ -166,7 +170,6 @@ function crear() {
                         "usuariocitaequipo": 1,
                         "tipoCita": tipoCita
                     }
-                    console.log(datos)
                     const requestOptions = {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -204,6 +207,7 @@ function crear() {
     }
     const buscarCitas = async (dia) => {
         const fechaActual = new Date();
+        //fechaActual.setDate(22)
         const fechaLunes = new Date(fechaActual);
         const fechaSabado = new Date(fechaActual); // Clona la fecha actual
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
@@ -218,9 +222,9 @@ function crear() {
             data.map((item) => {
                 const fecha = new Date(item.fecha)
                 if (fecha.getDate() == dia[1]) {
-                    console.log(data)
                     const fecha = new Date();
-                    /*fecha.setHours(3);
+                    /*fecha.setDate(22)
+                    fecha.setHours(3);
                     fecha.setMinutes(0);
                     fecha.setSeconds(0);
                     fecha.setMilliseconds(0);*/
@@ -242,6 +246,27 @@ function crear() {
         }
 
     }
+
+    const cambiarEstado = () => {
+        citasPendientes.forEach(async (item) => {
+            const datos = {
+                "estadoCita": 2,
+            }
+            const requestOptions = {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            };
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + item.id, requestOptions);
+            if (response.ok) {
+                setShowCorrecto(true)
+                setShowCitasPendientes(false);
+            } else {
+                setShowAlert(true)
+            }
+        })
+    }
+
     useEffect(() => {
         if (showAlert) {
             const timer = setTimeout(() => {
@@ -251,6 +276,32 @@ function crear() {
             return () => clearTimeout(timer);
         }
     }, [showAlert]);
+    useEffect(() => {
+        calcularNumeroDiaLunes();
+        const citasPendientes = async () => {
+            const fechaActual = new Date();
+            //fechaActual.setDate(22)
+            const fechaLunes = new Date(fechaActual);
+            const fechaSabado = new Date(fechaActual);
+            fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
+            fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7));
+            const fechaInicio = fechaLunes.toISOString().split('T')[0];
+            const fechaFin = fechaSabado.toISOString().split('T')[0];
+
+            const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/Estado/${fechaInicio}/${fechaFin}/6`);
+
+            const data = await response.json();
+            if (response.ok) {
+                if (data.length != 0) {
+                    setShowCitasPendientes(true)
+                    setCitasPendientes(data)
+                } else {
+                    setShowCitasPendientes(false)
+                }
+            }
+        }
+        citasPendientes();
+    }, []);
     useEffect(() => {
         if (showHorasCompletas) {
             const timer = setTimeout(() => {
@@ -272,59 +323,83 @@ function crear() {
     }, [showCorrecto]);
     return (
         <div>
-            <div>
-                <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
 
-                <div className=' justify-center  pt-8 flex gap-4" '>
-                    <div className='px-2 py-4'>
-                        <input onChange={() => { setTipoCita('1') }} defaultChecked type="radio" id='Virtual' name="Ubicacion" className=" peer hidden" />
-                        <label htmlFor='Virtual' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-green-500 py-3 px-10 font-bold text-green-500 transition-colors duration-200 ease-in-out peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-200">Virtual</label>
-                    </div>
+            {showCitasPendientes ? (<div className='w-full h-full'>
+                <h1 className='text-3xl font-bold text-center text-gray-600'>Citas pendientes:</h1>
 
-                    <div className='px-2 py-4'>
-                        <input onChange={() => { setTipoCita('2') }} type="radio" id='Presencial' name="Ubicacion" className=" peer hidden" />
-                        <label htmlFor='Presencial' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-indigo-500 py-3 px-6 font-bold text-indigo-500 transition-colors duration-200 ease-in-out peer-checked:bg-indigo-500 peer-checked:text-white peer-checked:border-indigo-200">Presencial</label>
+                <div className='mt-5'>
+                    <div className='text-xl font-bold text-center text-gray-600 grid grid-cols-3'>
+                        <div>Fecha</div>
+                        <div>Hora</div>
+                        <div>Equipo</div>
                     </div>
+                    {citasPendientes.map((item) => (
+                        <div key={item.id} className='text-xl font-semibold text-center text-gray-500 grid grid-cols-3'>
+                            <div>{new Date(item.fecha).toISOString().split('T')[0]}</div>
+                            <div>{formatTime(item.hora)}</div>
+                            <div>{item.equipocita.codigoEquipo}</div>
+                        </div>
+                    ))}
+                    <button onClick={() => { cambiarEstado() }} class="mt-6 text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Crear</button>
+
                 </div>
+            </div>) : (
+                <>
+                    <div>
+                        <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
 
-            </div>
-            <div className='pt-8'>
-                <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
-                <div class="justify-center flex pt-8">
-                    <div className='grid grid-cols-1 pl-14 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3   xl:flex gap-4'>
-                        {
-                            diasNumero.map((item, index) => (
-                                <div key={item} className='px-2 py-4'>
-                                    <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
-                                    <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500
+                        <div className=' justify-center  pt-8 flex gap-4" '>
+                            <div className='px-2 py-4'>
+                                <input onChange={() => { setTipoCita('1') }} defaultChecked type="radio" id='Virtual' name="Ubicacion" className=" peer hidden" />
+                                <label htmlFor='Virtual' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-green-500 py-3 px-10 font-bold text-green-500 transition-colors duration-200 ease-in-out peer-checked:bg-green-500 peer-checked:text-white peer-checked:border-green-200">Virtual</label>
+                            </div>
+
+                            <div className='px-2 py-4'>
+                                <input onChange={() => { setTipoCita('2') }} type="radio" id='Presencial' name="Ubicacion" className=" peer hidden" />
+                                <label htmlFor='Presencial' className="labelCheck select-none cursor-pointer rounded-lg border-2 border-indigo-500 py-3 px-6 font-bold text-indigo-500 transition-colors duration-200 ease-in-out peer-checked:bg-indigo-500 peer-checked:text-white peer-checked:border-indigo-200">Presencial</label>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div className='pt-8'>
+                        <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
+                        <div class="justify-center flex pt-8">
+                            <div className='grid grid-cols-1 pl-14 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3   xl:flex gap-4'>
+                                {
+                                    diasNumero.map((item, index) => (
+                                        <div key={item} className='px-2 py-4'>
+                                            <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
+                                            <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500
             py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> {item} </label>
-                                </div>
-                            ))
-                        }
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div className='pt-8'>
-                <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona la hora de la cita:</h1>
+                    <div className='pt-8'>
+                        <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona la hora de la cita:</h1>
 
-                <div class="justify-center flex pt-8">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-10 gap-4">
-                        {horas.map((items, index1) => (
-                            <div key={index1} className="pt-8 pl-5">
-                                {items.map((item, index) => (
-                                    <div key={item} className='px-2 py-4'>
-                                        <input onClick={(e) => seleccionarHora(item)} type="checkbox" id={item} name="dia-semana" className=" peer hidden" />
-                                        <label htmlFor={item} id={`lb${item}`} className="labelCheck select-none cursor-pointer rounded-lg border-2 border-emerald-500 py-3 px-6 font-bold text-emerald-500 transition-colors duration-200 ease-in-out peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-blue-200">{item}</label>
+                        <div class="justify-center flex pt-8">
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-10 gap-4">
+                                {horas.map((items, index1) => (
+                                    <div key={index1} className="pt-8 pl-5">
+                                        {items.map((item, index) => (
+                                            <div key={item} className='px-2 py-4'>
+                                                <input onClick={(e) => seleccionarHora(item)} type="checkbox" id={item} name="dia-semana" className=" peer hidden" />
+                                                <label htmlFor={item} id={`lb${item}`} className="labelCheck select-none cursor-pointer rounded-lg border-2 border-emerald-500 py-3 px-6 font-bold text-emerald-500 transition-colors duration-200 ease-in-out peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-blue-200">{item}</label>
+                                            </div>
+                                        ))}
                                     </div>
                                 ))}
                             </div>
-                        ))}
+                        </div>
                     </div>
-                </div>
-            </div>
-            {estadoCrear ? (<div className='mt-5'>
-                <button onClick={() => { crearCitas() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Crear</button>
-            </div>) : null}
+                    {estadoCrear ? (<div className='mt-5'>
+                        <button onClick={() => { crearCitas() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Crear</button>
+                    </div>) : null}
+
+                </>)}
 
             {showAlert && (
                 <div className="fixed bottom-0 right-0 mb-8 mr-8">
@@ -381,6 +456,8 @@ function crear() {
                     </div>
                 </div>
             )}
+
+
         </div>
     )
 }

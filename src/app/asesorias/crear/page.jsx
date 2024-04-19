@@ -8,6 +8,8 @@ function page() {
     const options = { month: 'long' };
     const monthName = new Date(2000, monthIndex).toLocaleString('es-ES', options);
     const [horasPendientes, setHorasPendientes] = useState('');
+    const [citasPendiente, setCitasPendientes] = useState([]);
+    const [citasActuales, setCitasActuales] = useState([]);
 
     useEffect(() => {
         const validarHoras = async () => {
@@ -23,6 +25,7 @@ function page() {
                 const horasAsignadas = data[0].horasAsignadas;
                 const CantidadAsesorias = horasAsignadas * 4;
                 const fechaActual = new Date();
+                fechaActual.setDate(22)
                 const fechaLunes = new Date(fechaActual);
                 fechaLunes.setDate(diaLunes)
                 const fechaSabado = new Date(fechaActual);
@@ -35,7 +38,14 @@ function page() {
                 if (response2.ok) {
                     const asesoriasActual = data2.length;
                     if (asesoriasActual < CantidadAsesorias) {
-                        return (CantidadAsesorias - asesoriasActual);
+                        data2.forEach(item => {
+                            if (item.estadoCita !== 6) {
+                                setCitasActuales(prev => [...prev, item]);
+                            } else {
+                                setCitasPendientes(prev => [...prev, item]);
+                            }
+                        });
+                        return (CantidadAsesorias - citasActuales.length);
                     }
                 }
             }
@@ -46,18 +56,19 @@ function page() {
     return (
         <div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
             <div className='pt-8  pb-8 w-full'>
-                <div className='md:flex h-22    sm:flex-col sm:h-auto border-b-2      flex justify-between items-center'>
+                <div className='  h-22 pb-2 flex-col  border-b-2 flex justify-between items-center'>
                     <div>
                         <h1 className='ml-5 text-4xl font-bold text-gray-600'>Crear citas de asesorías</h1>
                     </div>
                     <div className='text-gray-600 h-10'>
                         {!horasPendientes ? (
                             <div className="text-xl sm:mt-2"> {/* Añadida clase sm:mt-2 para separación en pantallas pequeñas */}
-                                <span className='font-semibold'>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>, Citas pendientes <span className='bg-green-500 rounded-xl text-white py-2 px-2'>0</span>
+                                <span className='font-semibold'>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>, Citas pendientes <span className='bg-green-500 rounded-xl text-white py-1 px-2'>0</span>
                             </div>
                         ) : (
-                            <div className="text-xl sm:mt-2"> {/* Añadida clase sm:mt-2 para separación en pantallas pequeñas */}
-                                <span className='font-semibold'>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>, Citas pendientes <span className='bg-indigo-500 rounded-xl text-white py-2 px-2'>{horasPendientes}</span>
+                            <div className="text-xl sm:mt-2 "> {/* Añadida clase sm:mt-2 para separación en pantallas pequeñas */}
+                                <span className='font-semibold'>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</span>, Citas pendientes <span className='bg-indigo-500 rounded-xl text-white py-1 px-2'>{horasPendientes}</span>
+                                {citasPendiente.length != 0 ? (<>Citas que se deben <span className='bg-amber-500 rounded-xl text-white py-1 px-2'>{citasPendiente.length}</span></>):(null)}
                             </div>
                         )}
                     </div>

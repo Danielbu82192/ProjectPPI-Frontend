@@ -44,15 +44,12 @@ export default function page() {
         const Jueves = document.getElementById("Jueves");
         const Viernes = document.getElementById("Viernes");
         const Sabado = document.getElementById("Sabado");
-        if (!segundaAsesoria) {
-            Lunes.checked = false;
-            Martes.checked = false;
-            Miercoles.checked = false;
-        } else {
-            Jueves.checked = false;
-            Viernes.checked = false;
-            Sabado.checked = false;
-        }
+        Lunes.checked = false;
+        Martes.checked = false;
+        Miercoles.checked = false;
+        Jueves.checked = false;
+        Viernes.checked = false;
+        Sabado.checked = false;
         const fechaActual = new Date();
         const fechaLunes = new Date(fechaActual);
         const fechaSabado = new Date(fechaActual); // Clona la fecha actual
@@ -60,11 +57,9 @@ export default function page() {
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
-
         const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${asesor}`);
         const data = await response.json();
         if (response.ok) {
-            console.log(data)
             const Lunes = document.getElementById("Lunes");
             const lLunes = document.getElementById("LbLunes");
             const Martes = document.getElementById("Martes");
@@ -106,48 +101,48 @@ export default function page() {
                     const hActual = parseInt(horaActual.getHours()) * 60 + (horaActual.getMinutes())
                     const minTotal = parseInt(item.hora.split(":")[0]) * 60 + parseInt(item.hora.split(":")[1])
                     if (fecha.getDay() == 1) {
-                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                        /*if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
                             return null;
-                        }
+                        }*/
                         Lunes.disabled = false;
                         lLunes.classList.remove('labeldsabilitado')
                         LunesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
                     } else if (fecha.getDay() == 2) {
-                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                        /*if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
                             return null;
-                        }
+                        }*/
                         Martes.disabled = false;
                         lMartes.classList.remove('labeldsabilitado')
                         MartesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
 
                     } else if (fecha.getDay() == 3) {
-                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                        /*if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
                             return null;
-                        }
+                        }*/
                         Miercoles.disabled = false;
                         lMiercoles.classList.remove('labeldsabilitado')
                         MiercolesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
 
                     } else if (fecha.getDay() == 4) {
-                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                        /*if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
                             return null;
-                        }
+                        }*/
                         Jueves.disabled = false;
                         lJueves.classList.remove('labeldsabilitado')
                         JuevesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
 
                     } else if (fecha.getDay() == 5) {
-                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                        /*if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
                             return null;
-                        }
+                        }*/
                         Viernes.disabled = false;
                         lViernes.classList.remove('labeldsabilitado')
                         ViernesV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
 
                     } else if (fecha.getDay() == 6) {
-                        if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
+                        /*if (fecha.getDay() == new Date().getDay() && hActual - minTotal > 0) {
                             return null;
-                        }
+                        }*/
                         Sabado.disabled = false;
                         lSabado.classList.remove('labeldsabilitado')
                         SabadoV.push([formatTime(item.hora), item.id, estado.id, tipo.nombre])
@@ -182,7 +177,7 @@ export default function page() {
 
     const agendarCita = async () => {
         if (estadoPedirCita) {
-            if (segundaAsesoria) { 
+            if (segundaAsesoria) {
                 const fecha = new Date();
                 if (parseInt(fechaSeleccionada) < 3) {
                     setShowAlert(true);
@@ -202,7 +197,6 @@ export default function page() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datos)
             };
-            console.log(datos)
             const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptions);
             if (response.ok) {
                 setEstadoAgendar(false)
@@ -279,7 +273,7 @@ export default function page() {
         traerCitasEquipo();
     }, []);
 
- 
+
 
     const mostrarBotton = (estado) => {
         if (fechaSeleccionada + 1 < new Date().getDay()) {

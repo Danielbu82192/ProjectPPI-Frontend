@@ -80,6 +80,8 @@ function tarjetas() {
                                                 ? 'from-red-500 via-red-400 to-red-500'
                                                 : item.estadoCita.id === 5
                                                     ? 'from-red-600 via-red-500 to-red-600'
+                                                    : item.estadoCita.id === 6
+                                                    ? 'from-amber-600 via-amber-500 to-amber-600'
                                                     : 'from-stone-500 via-stone-400 to-stone-500'
                                         }`}
                                 ></span>
