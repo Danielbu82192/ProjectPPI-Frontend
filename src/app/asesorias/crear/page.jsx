@@ -10,6 +10,7 @@ function page() {
     const [horasPendientes, setHorasPendientes] = useState('');
     const [citasPendiente, setCitasPendientes] = useState([]);
     const [citasActuales, setCitasActuales] = useState([]);
+    const [fechaPruebas, setFechaPruebas] = useState([]);
 
     useEffect(() => {
         const validarHoras = async () => {
@@ -55,7 +56,7 @@ function page() {
     }, []);
     return (
         <div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
-            <div className='pt-8  pb-8 w-full'>
+             <div className='pt-8  pb-8 w-full'>
                 <div className='  h-22 pb-2 flex-col  border-b-2 flex justify-between items-center'>
                     <div>
                         <h1 className='ml-5 text-4xl font-bold text-gray-600'>Crear citas de asesorías</h1>

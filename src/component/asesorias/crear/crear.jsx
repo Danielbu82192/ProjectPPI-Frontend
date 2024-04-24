@@ -150,7 +150,7 @@ function crear() {
 
     const crearCitas = async () => {
         const fecha = new Date()
-        fechaActual.setDate(22)
+        //fechaActual.setDate(22)
         let estado = false;
         fecha.setDate(diaCreacion)
 
@@ -161,6 +161,7 @@ function crear() {
             setHorasPendientes(valHoras);
             for (const elemento of horaSeleccionadas) {
                 try {
+                    alert(fecha)
                     const datos = {
                         "fecha": fecha,
                         "hora": elemento[0],

@@ -19,7 +19,6 @@ export default function page() {
     const [segundaAsesoria, setSegundaAsesoria] = useState(false);
     const [estadoAgendar, setEstadoAgendar] = useState(false)
     const [horasM, setHorasM] = useState([])
-    const [horaActual, setHorasActual] = useState([])
     useEffect(() => {
         const buscarAsesores = async () => {
             const response = await fetch(`https://projectppi-backend-production.up.railway.app/usuario/asesor`);
@@ -28,7 +27,6 @@ export default function page() {
                 setAsesores(data);
             }
         }
-        setHorasActual(new Date().getHours())
         buscarAsesores();
     }, []);
     function formatTime(timeString) {
@@ -176,39 +174,89 @@ export default function page() {
     }
 
     const agendarCita = async () => {
-        if (estadoPedirCita) {
-            if (segundaAsesoria) {
-                const fecha = new Date();
-                if (parseInt(fechaSeleccionada) < 3) {
-                    setShowAlert(true);
-                    return;
+        try {
+            if (estadoPedirCita) {
+                if (segundaAsesoria) {
+                    const fecha = new Date();
+                    if (parseInt(fechaSeleccionada) < 3) {
+                        setShowAlert(true);
+                        return;
+                    }
+                    if (fecha.getDay() < 4) {
+                        setShowAlert(true);
+                        return;
+                    }
                 }
-                if (fecha.getDay() < 4) {
-                    setShowAlert(true);
-                    return;
+
+
+                const datosCita = {
+                    "estadoCita": "2",
+                    "equipocita": "1",
+                };
+
+                const requestOptionsCita = {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosCita)
+                };
+
+                const responseCita = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita);
+
+                if (responseCita.ok) {
+                    const fechaActual = new Date();
+                    const fechaLunes = new Date(fechaActual);
+                    fechaActual.setDate(fechaActual.getDate() - fechaActual.getDay() + 1 + fechaSeleccionada);
+                    console.log(fechaActual)
+                    alert(fechaActual)
+                    const datosSeguimiento = {
+                        "fecha": fechaActual,
+                        "asistencia": [],
+                        "citas": horaSeleccionada,
+                        "compromiso": "",
+                        "observacion": ""
+                    };
+
+                    console.log(datosSeguimiento)
+                    const requestOptionsSeguimiento = {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(datosSeguimiento)
+                    };
+                    const responseSeguimiento = await fetch('http://localhost:3002/seguimiento-ppi/', requestOptionsSeguimiento);
+                    if (responseSeguimiento.ok) { 
+                        setEstadoAgendar(false);
+                        setShowCorrecto(true); 
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                    else {
+                        DeshacerReserva()
+                    }
                 }
-            }
-            const datos = {
-                "estadoCita": "2",
-                "equipocita": "1",
-            }
-            const requestOptions = {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            };
-            const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptions);
-            if (response.ok) {
-                setEstadoAgendar(false)
-                setShowCorrecto(true);
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
+
             } else {
-                setShowError(true);
+                setShowM2citas(true);
             }
-        } else {
-            setShowM2citas(true)
+        } catch (error) {
+            DeshacerReserva()
+        }
+    };
+
+    const DeshacerReserva=async()=>{
+        const datosCita2 = {
+            "estadoCita": "1",
+            "equipocita": null
+        };
+
+        const requestOptionsCita2 = {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datosCita2)
+        };
+        const responseCita = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita2);
+        if (responseCita.ok) {
+            setShowError(true)
         }
     }
     useEffect(() => {

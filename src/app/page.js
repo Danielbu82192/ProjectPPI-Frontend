@@ -1,8 +1,8 @@
 import React from 'react'
-import Banner from '@/component/banner/banner'  
+import  { SlideBanner, SlideNewsCard } from '@/component/banner/banner'  
 function page() {
   return (
-    <div style={{"z-index":"1"}}><Banner/></div>
+    <div className='bg-white justify-center  flex flex-col px-5 py-20 '><SlideBanner/><SlideNewsCard/></div>
   )
 }
 
