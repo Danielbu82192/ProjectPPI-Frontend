@@ -13,7 +13,7 @@ function page({ params }) {
 
     useEffect(() => {
         const fechData = async () => {
-            const response = await fetch('http://localhost:3002/equipo-ppi/' + params.id);
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/equipo-ppi/' + params.id);
             const data = await response.json();
             if (response.ok) {
                 setBitacora(data[0]);
@@ -23,11 +23,11 @@ function page({ params }) {
     }, [params]);
     useEffect(() => {
         const fetchData = async () => {
-            const response2 = await fetch('http://localhost:3002/equipo-usuarios/Estudiantes');
+            const response2 = await fetch('https://projectppi-backend-production.up.railway.app/equipo-usuarios/Estudiantes');
             const data2 = await response2.json();
             if (response2.ok)
                 setEstudiantes(data2);
-            const response = await fetch('http://localhost:3002/seguimiento-ppi/' + bitacora.codigoEquipo);
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/' + bitacora.codigoEquipo);
             const data = await response.json();
             if (response.ok) {
                 console.log(data)

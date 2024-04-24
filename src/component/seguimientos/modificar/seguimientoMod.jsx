@@ -16,7 +16,7 @@ function seguimientoMod({ idSeguimiento, fecha }) {
 
     useEffect(() => {
         const fetchData = async () => {
-            const response = await fetch('http://localhost:3002/seguimiento-ppi/estudiantes/' + id);
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/estudiantes/' + id);
             const data = await response.json();
             if (response.ok) {
                 setEstudiantes(data)
@@ -69,7 +69,7 @@ function seguimientoMod({ idSeguimiento, fecha }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dato)
             };
-            const response = await fetch('http://localhost:3002/seguimiento-ppi/' + id, requestOptions);
+            const response = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/' + id, requestOptions);
             if (response.ok) {
                 setShowCorrecto(true);
                 setTimeout(() => {

@@ -24,7 +24,7 @@ export default function asesor() {
 
   useEffect(() => {
     const traerBitacoras = async () => {
-      const response = await fetch('http://localhost:3002/equipo-ppi');
+      const response = await fetch('https://projectppi-backend-production.up.railway.app/equipo-ppi');
       const data = await response.json();
       if (response.ok) {
         setBitacoras(data)
@@ -37,7 +37,7 @@ export default function asesor() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response2 = await fetch('http://localhost:3002/equipo-usuarios/Estudiantes');
+      const response2 = await fetch('https://projectppi-backend-production.up.railway.app/equipo-usuarios/Estudiantes');
       const data2 = await response2.json();
       setEstudiantes(data2)
     };

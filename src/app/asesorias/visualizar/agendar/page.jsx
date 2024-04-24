@@ -222,7 +222,7 @@ export default function page() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(datosSeguimiento)
                     };
-                    const responseSeguimiento = await fetch('http://localhost:3002/seguimiento-ppi/', requestOptionsSeguimiento);
+                    const responseSeguimiento = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/', requestOptionsSeguimiento);
                     if (responseSeguimiento.ok) { 
                         setEstadoAgendar(false);
                         setShowCorrecto(true); 
