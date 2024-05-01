@@ -1,6 +1,6 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 "use client"
 import { split } from 'postcss/lib/list';
-/* eslint-disable react-hooks/rules-of-hooks */
 import React, { useState, useEffect } from 'react'
 import { format } from 'date-fns';
 import './css/style.css'
@@ -122,7 +122,7 @@ function crear() {
     }
 
     const validarHoras = async (cantHoras) => {
-        const response = await fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/1');
+        const response = await fetch('http://localhost:3002/hora-semanal/profesor/1');
         const data = await response.json();
         if (response.ok) {
             const horasAsignadas = data[0].horasAsignadas;
@@ -136,7 +136,7 @@ function crear() {
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
             const fechaInicio = fechaLunes.toISOString().split('T')[0];
             const fechaFin = fechaSabado.toISOString().split('T')[0];
-            const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
             const data2 = await response2.json();
             if (response2.ok) {
                 const asesoriasActual = data2.length + cantHoras;
@@ -154,14 +154,13 @@ function crear() {
         let estado = false;
         fecha.setDate(diaCreacion)
 
-        const valHoras = await validarHoras(horaSeleccionadas.length)
+        const valHoras = await validarHoras(horaSeleccionadas.length) 
         if (valHoras == false) {
             setShowHorasCompletas(true)
         } else {
             setHorasPendientes(valHoras);
             for (const elemento of horaSeleccionadas) {
-                try {
-                    alert(fecha)
+                try { 
                     const datos = {
                         "fecha": fecha,
                         "hora": elemento[0],
@@ -216,7 +215,7 @@ function crear() {
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
 
-        const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
         const data = await response.json();
         if (response.ok) {
             setLabelCheck([])
@@ -243,7 +242,7 @@ function crear() {
             })
 
         } else {
-            setShowNoAseaorias(true);
+            setShowAlert(true);
         }
 
     }

@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 export default function page() {
 
     const [asesores, setAsesores] = useState([])
+    const [estudiantes, setEstudiantes] = useState([])
     const [citasEquipo, setCitasEquipo] = useState([])
     const [showCorrecto, setShowCorrecto] = useState(false)
     const [showM2citas, setShowM2citas] = useState(false)
@@ -21,12 +22,21 @@ export default function page() {
     const [horasM, setHorasM] = useState([])
     useEffect(() => {
         const buscarAsesores = async () => {
-            const response = await fetch(`https://projectppi-backend-production.up.railway.app/usuario/asesor`);
+            const response = await fetch(`http://localhost:3002/usuario/asesor`);
             const data = await response.json();
             if (response.ok) {
                 setAsesores(data);
             }
         }
+        const buscarEstudiantes = async () => {
+            const response = await fetch(`http://localhost:3002/equipo-usuarios/estudiantes`);
+            const data = await response.json();
+            if (response.ok) {
+                setEstudiantes(data[101]);
+                console.log(data[101])
+            }
+        }
+        buscarEstudiantes();
         buscarAsesores();
     }, []);
     function formatTime(timeString) {
@@ -55,7 +65,7 @@ export default function page() {
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
-        const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${asesor}`);
+        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${asesor}`);
         const data = await response.json();
         if (response.ok) {
             const Lunes = document.getElementById("Lunes");
@@ -199,22 +209,23 @@ export default function page() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datosCita)
                 };
-
-                const responseCita = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita);
+                const responseCita = await fetch('http://localhost:3002/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita);
 
                 if (responseCita.ok) {
                     const fechaActual = new Date();
                     const fechaLunes = new Date(fechaActual);
                     fechaActual.setDate(fechaActual.getDate() - fechaActual.getDay() + 1 + fechaSeleccionada);
-                    console.log(fechaActual)
-                    alert(fechaActual)
                     const datosSeguimiento = {
                         "fecha": fechaActual,
-                        "asistencia": [],
                         "citas": horaSeleccionada,
                         "compromiso": "",
                         "observacion": ""
                     };
+
+                    estudiantes.forEach((element, index) => {
+                        const name = "estudiante" + (index + 1);
+                        datosSeguimiento[name] = element.id
+                    });
 
                     console.log(datosSeguimiento)
                     const requestOptionsSeguimiento = {
@@ -222,10 +233,10 @@ export default function page() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(datosSeguimiento)
                     };
-                    const responseSeguimiento = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/', requestOptionsSeguimiento);
-                    if (responseSeguimiento.ok) { 
+                    const responseSeguimiento = await fetch('http://localhost:3002/seguimiento-ppi/', requestOptionsSeguimiento);
+                    if (responseSeguimiento.ok) {
                         setEstadoAgendar(false);
-                        setShowCorrecto(true); 
+                        setShowCorrecto(true);
                         setTimeout(() => {
                             window.location.reload();
                         }, 2000);
@@ -234,7 +245,6 @@ export default function page() {
                         DeshacerReserva()
                     }
                 }
-
             } else {
                 setShowM2citas(true);
             }
@@ -243,7 +253,7 @@ export default function page() {
         }
     };
 
-    const DeshacerReserva=async()=>{
+    const DeshacerReserva = async () => {
         const datosCita2 = {
             "estadoCita": "1",
             "equipocita": null
@@ -254,7 +264,7 @@ export default function page() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(datosCita2)
         };
-        const responseCita = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita2);
+        const responseCita = await fetch('http://localhost:3002/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita2);
         if (responseCita.ok) {
             setShowError(true)
         }
@@ -296,7 +306,7 @@ export default function page() {
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 6)); // Establece la fecha al próximo lunes
             const fechaInicio = fechaLunes.toISOString().split('T')[0];
             const fechaFin = fechaSabado.toISOString().split('T')[0];
-            const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/Equipo/${fechaInicio}/${fechaFin}/1`);
+            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/Equipo/${fechaInicio}/${fechaFin}/1`);
             const data = await response.json();
             if (response.ok) {
                 if (data.length == 0) {

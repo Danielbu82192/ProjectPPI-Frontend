@@ -34,7 +34,7 @@ function calendario() {
     }
 
     const Login = async () => {
-        const response = await fetch(`https://projectppi-backend-production.up.railway.app/usuario/Juan@gmail.com/123456789`);
+        const response = await fetch(`http://localhost:3002/usuario/Juan@gmail.com/123456789`);
         const data = await response.json();
         if (response.ok) {
             idAsesor = data[0].id;
@@ -59,7 +59,7 @@ function calendario() {
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
         const fechaInicio = fechaLunes.toISOString().split('T')[0];
         const fechaFin = fechaSabado.toISOString().split('T')[0];
-        const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
         const data = await response.json();
         if (response.ok) {
             console.log(data)

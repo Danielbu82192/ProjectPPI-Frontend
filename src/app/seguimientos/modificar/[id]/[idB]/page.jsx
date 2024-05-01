@@ -1,10 +1,24 @@
 "use client"
 /* eslint-disable react-hooks/rules-of-hooks */
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import SeguimientoMod from '@/component/seguimientos/modificar/seguimientoMod'
 
 function page({ params }) {
 
+    const [estado,setEstado]=useState([])
+    const [estadoSeguimiento,setEstadoSeguimiento]=useState([])
+
+    useEffect(() => {
+        const fechData = async () => {
+            const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/id/' + params.idB);
+            const data = await response.json();
+            if (response.ok) {
+                setEstado(data.estadoSeguimiento); 
+                setEstadoSeguimiento(data); 
+            }
+        }
+        fechData()
+    }, [params]);
     
     return (
         <div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
@@ -15,7 +29,7 @@ function page({ params }) {
                     </div>
                 </div>
                 <div className='p-10'>
-                    {parseInt(params.idB) == parseInt(new Date('04/25/2024').getDate()) ? (<SeguimientoMod idSeguimiento={params.id} idBitacora={params.idB} />) : (<></>)}
+                    {estado.id==1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date('04/26/2024').getDate()) ? (<SeguimientoMod idSeguimiento={params.id} idEstado={params.idB} />) : (<h1>No puedes editar esta asesoria, comunicate con el coordinador para volver a activarlo</h1>)}
 
                 </div>
             </div>

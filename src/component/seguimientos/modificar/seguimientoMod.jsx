@@ -3,26 +3,60 @@
 import React, { useEffect, useState } from 'react'
 import { useRouter } from "next/navigation";
 
-function seguimientoMod({ idSeguimiento, fecha }) {
+function seguimientoMod({ idSeguimiento, idEstado }) {
     const [estudiantes, setEstudiantes] = useState([])
     const [asistencia, setAsistencia] = useState([]);
+    const [asesoria, setAsesoria] = useState([])
     const [compromisos, setCompromisos] = useState('');
     const [observaciones, setObservaciones] = useState('');
     const [showAlert, setShowAlert] = useState(false);
     const [showCorrecto, setShowCorrecto] = useState(false);
+    const [showNoCumplido, setShowNoCumplido] = useState(false);
+    const [cita, setCita] = useState(false);
     const [id, setId] = useState(idSeguimiento)
+    const [estado, setEstado] = useState([])
+    const [estadoSeguimiento, setEstadoSeguimiento] = useState([])
     const router = useRouter();
 
 
+
     useEffect(() => {
+        const traerAsesoria = async () => {
+            const response = await fetch('http://localhost:3002/seguimiento-ppi/id/' + id);
+            const data = await response.json();
+            if (response.ok) {
+                setAsesoria(data);
+            }
+        }
+
         const fetchData = async () => {
-            const response = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/estudiantes/' + id);
+            const response = await fetch('http://localhost:3002/seguimiento-ppi/estudiantes/' + id);
             const data = await response.json();
             if (response.ok) {
                 setEstudiantes(data)
                 setAsistencia(data.map(item => [item.id, 0]));
             }
         };
+
+        const traerEstado = async () => {
+            const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/id/' + idEstado);
+            const data = await response.json();
+            if (response.ok) {
+                setEstado(data.estadoSeguimiento);
+                setEstadoSeguimiento(data);
+            }
+        }
+
+        const traerCita = async () => {
+            const response = await fetch('http://localhost:3002/citas-asesoria-ppi/Seguimiento/' + id);
+            const data = await response.json();
+            if (response.ok) {
+                setCita(data)
+            }
+        }
+        traerCita();
+        traerEstado();
+        traerAsesoria();
         fetchData();
     }, [idSeguimiento]);
 
@@ -43,43 +77,67 @@ function seguimientoMod({ idSeguimiento, fecha }) {
 
 
     const modificarSeguimiento = async () => {
-        if(fecha == new Date().getDate()){
-        if (compromisos.length == 0 && observaciones == 0) {
-            setShowAlert(true)
-        } else {
-            if (asistencia[0][1] == 0 && asistencia[1][1] == 0) {
-                setShowAlert(true)
+        if (parseInt(new Date(estadoSeguimiento.fecha).getDate()) == new Date().getDate()) {
+            const horaCita = parseInt(cita.hora.split(':')[1]) + (parseInt(cita.hora.split(':')[0]) * 60)
+            const fechaACtual = new Date();
+            const horaActual = (fechaACtual.getHours() * 60) + fechaACtual.getMinutes();
+            if (horaCita - horaActual > 0) {
+                setShowNoCumplido(true)
                 return;
             }
-            let asistenciaEstudiantes = []
-            estudiantes.forEach(element => {
-                for (let index = 0; index < asistencia.length; index++) {
-                    if (asistencia[index][0] == element.id) {
-                        asistenciaEstudiantes.push({ "nombre": element.nombre, "asistencia": asistencia[index][1] })
-                    }
+            if (compromisos.length == 0 && observaciones == 0) {
+                setShowAlert(true)
+            } else {
+                if (asistencia[0][1] == 0 && asistencia[1][1] == 0) {
+                    setShowAlert(true)
+                    return;
                 }
-            });
-            const dato = {
-                "compromiso": compromisos,
-                "observacion": observaciones,
-                "asistencia": asistenciaEstudiantes
+
+                const dato = {
+                    "compromiso": compromisos,
+                    "observacion": observaciones,
+                }
+                const requestOptions = {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dato)
+                };
+                const response = await fetch('http://localhost:3002/seguimiento-ppi/' + id, requestOptions);
+                if (response.ok) {
+                    asistencia.forEach(async (element, index) => {
+                        const nombre1 = "asistenciaEstudiante" + (index + 1)
+                        const dato = {
+                            [nombre1]: element[1],
+                        }
+                        const requestOptions = {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(dato)
+                        };
+                        const response = await fetch('http://localhost:3002/seguimiento-ppi/Asistencia/' + element[0], requestOptions);
+                        if (response.ok) {
+                            const dato = {
+                                "estadoSeguimiento": 2,
+                            }
+                            const requestOptions = {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(dato)
+                            };
+                            const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/' + idEstado, requestOptions);
+                            if (response.ok)
+                                setShowCorrecto(true);
+                        }
+                    });
+
+                    setTimeout(() => {
+                        router.back();
+                    }, 2000);
+                }
             }
-            const requestOptions = {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dato)
-            };
-            const response = await fetch('https://projectppi-backend-production.up.railway.app/seguimiento-ppi/' + id, requestOptions);
-            if (response.ok) {
-                setShowCorrecto(true);
-                setTimeout(() => {
-                    router.back();
-                }, 2000);
-            }
+        } else {
+            setShowAlert(true)
         }
-    }else{
-        setShowAlert(true)
-    }
     }
     useEffect(() => {
         if (showAlert) {
@@ -100,6 +158,18 @@ function seguimientoMod({ idSeguimiento, fecha }) {
             return () => clearTimeout(timer);
         }
     }, [showCorrecto]);
+
+
+
+    useEffect(() => {
+        if (showNoCumplido) {
+            const timer = setTimeout(() => {
+                setShowNoCumplido(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [showNoCumplido]);
     return (
 
 
@@ -164,7 +234,7 @@ function seguimientoMod({ idSeguimiento, fecha }) {
 
             </div>
             <div className='mt-5'>
-                {fecha == new Date().getDate() ? (<button onClick={() => { modificarSeguimiento() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
+                {estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date('04/26/2024').getDate()) ? (<button onClick={() => { modificarSeguimiento() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
                 ) : (null)}
             </div>
             {showAlert && (
@@ -178,6 +248,25 @@ function seguimientoMod({ idSeguimiento, fecha }) {
                         <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
                             <div>Todos los campos deben estar llenos y debe haber asistido un estudiante.</div>
                             <button onClick={() => { setShowAlert(!showAlert) }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
+                                    <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showNoCumplido && (
+                <div className="fixed bottom-0 right-0 mb-8 mr-8">
+                    <div className="flex w-96 shadow-lg rounded-lg">
+                        <div className="bg-orange-600 py-4 px-6 rounded-l-lg flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="fill-current text-white" width="20" height="20">
+                                <path fillRule="evenodd" d="M4.47.22A.75.75 0 015 0h6a.75.75 0 01.53.22l4.25 4.25c.141.14.22.331.22.53v6a.75.75 0 01-.22.53l-4.25 4.25A.75.75 0 0111 16H5a.75.75 0 01-.53-.22L.22 11.53A.75.75 0 010 11V5a.75.75 0 01.22-.53L4.47.22zm.84 1.28L1.5 5.31v5.38l3.81 3.81h5.38l3.81-3.81V5.31L10.69 1.5H5.31zM8 4a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 018 4zm0 8a1 1 0 100-2 1 1 0 000 2z"></path>
+                            </svg>
+                        </div>
+                        <div className="px-4 py-6 bg-white rounded-r-lg flex justify-between items-center w-full border border-l-transparent border-gray-200">
+                            <div>La asesoría aún no se ha cumplido.</div>
+                            <button onClick={() => { setShowNoCumplido(!showNoCumplido) }}>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="fill-current text-gray-700" viewBox="0 0 16 16" width="20" height="20">
                                     <path fillRule="evenodd" d="M3.72 3.72a.75.75 0 011.06 0L8 6.94l3.22-3.22a.75.75 0 111.06 1.06L9.06 8l3.22 3.22a.75.75 0 11-1.06 1.06L8 9.06l-3.22 3.22a.75.75 0 01-1.06-1.06L6.94 8 3.72 4.78a.75.75 0 010-1.06z"></path>
                                 </svg>

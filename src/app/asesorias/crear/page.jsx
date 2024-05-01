@@ -34,7 +34,7 @@ function page() {
                 fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
                 const fechaInicio = fechaLunes.toISOString().split('T')[0];
                 const fechaFin = fechaSabado.toISOString().split('T')[0];
-                const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+                const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
                 const data2 = await response2.json();
                 if (response2.ok) {
                     const asesoriasActual = data2.length;

@@ -62,7 +62,7 @@ function page({ params }) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/${params.id}`);
+                const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${params.id}`);
                 const data = await response.json();
                 setCita(data);
                 setCitaEstado(data.estadoCita)
@@ -73,7 +73,7 @@ function page({ params }) {
                 setSelectEstado(data.estadoCita.id)
                 setNumeroDia(new Date(data.fecha).getDate())
                 setTipoCita(data.tipoCita)
-                const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
+                const response2 = await fetch(`http://localhost:3002/hora-semanal/profesor/${data.usuariocitaequipo.id}`);
                 const data2 = await response2.json();
                 setSalon(data2[0].salon)
                 if (new Date().getDate() == new Date(data.fecha).getDate()) {
@@ -162,7 +162,7 @@ function page({ params }) {
     }, [listEquipos]);
     const listarEquipo = async () => {
         try {
-            const response = await fetch(`https://projectppi-backend-production.up.railway.app/equipo-ppi`);
+            const response = await fetch(`http://localhost:3002/equipo-ppi`);
             const data = await response.json();
             if (response.ok) {
                 setListEquipos(data)
@@ -177,14 +177,11 @@ function page({ params }) {
 
         const getEstudiantesXEquipo = async () => {
             try {
-                const response = await fetch(`https://projectppi-backend-production.up.railway.app/equipo-usuarios/Estudiantes/${equipo.codigoEquipo}`);
+                const response = await fetch(`http://localhost:3002/equipo-usuarios/Estudiantes`);
                 const data = await response.json();
                 if (response.ok) {
-
-                    setEstudiantesEquipo([])
-                    data.forEach(item => {
-                        setEstudiantesEquipo(prevEstudiantes => [...prevEstudiantes, item.usuario]);
-                    });
+                    console.log(data[equipo.codigoEquipo])
+                    setEstudiantesEquipo(data[equipo.codigoEquipo])
                 }
             } catch (error) {
                 setShowAlert(true);
@@ -226,7 +223,7 @@ function page({ params }) {
         } else {
             setShowACampos(true)
         }
-        const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/BuscarFechaHoraUsuario/${datos.fecha}/${hora}/1`);
+        const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/BuscarFechaHoraUsuario/${datos.fecha}/${hora}/1`);
         if (response2.ok) {
             const data2 = await response2.json();
             if (data2.length == 0) {
@@ -236,7 +233,7 @@ function page({ params }) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(datos)
                 };
-                const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + params.id, requestOptions);
+                const response = await fetch('http://localhost:3002/citas-asesoria-ppi/' + params.id, requestOptions);
                 if (response.ok) {
                     setShowCorrecto(true)
                 }
@@ -250,7 +247,7 @@ function page({ params }) {
             const FechaCancelar = new Date();
             FechaCancelar.setDate(diaCancelar);
             const Fecha = format(FechaCancelar, 'yyyy-MM-dd');
-            const response2 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
+            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
             const data2 = await response2.json();
             if (data2.length != 0) {
                 setShowOcupado(true)
@@ -259,7 +256,7 @@ function page({ params }) {
             const FechaActual = new Date();
             const FechaSabado = new Date();
             FechaSabado.setDate(FechaActual.getDate() - (FechaActual.getDay() - 7))
-            let datosCrear={} 
+            let datosCrear = {}
             if (FechaSabado.getDate() < FechaCancelar.getDate()) {
                 datosCrear = {
                     "fecha": FechaCancelar,
@@ -271,7 +268,7 @@ function page({ params }) {
                     "tipoCita": tipoCita.id,
                     "equipocita": equipo.id
                 }
-            }else{ 
+            } else {
                 datosCrear = {
                     "fecha": FechaCancelar,
                     "hora": `${horaCancelar}:${minCancelar}`,
@@ -282,17 +279,17 @@ function page({ params }) {
                     "tipoCita": tipoCita.id,
                     "equipocita": equipo.id
                 }
-            } 
+            }
             const requestOptions = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(datosCrear)
             };
-            const response = await fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi', requestOptions);
+            const response = await fetch('http://localhost:3002/citas-asesoria-ppi', requestOptions);
             if (response.ok) {
-                const response = await fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/profesor/1');
+                const response = await fetch('http://localhost:3002/hora-semanal/profesor/1');
                 const data = await response.json();
-                const response3 = await fetch(`https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
+                const response3 = await fetch(`http://localhost:3002/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
                 if (!response3.ok) {
                     showAlert(true)
                     return;
@@ -301,8 +298,8 @@ function page({ params }) {
                 let datos = {}
                 const ids = cita.id
                 if (response.ok) {
-                    const horasPendientes=data[0].horasPendientes; 
-                    if (Object.keys(horasPendientes).length == null||Object.keys(horasPendientes).length == 0) {
+                    const horasPendientes = data[0].horasPendientes;
+                    if (Object.keys(horasPendientes).length == null || Object.keys(horasPendientes).length == 0) {
                         datos = {
                             "horasPendientes": {
                                 [Fecha]: {
@@ -340,25 +337,35 @@ function page({ params }) {
                     };
                     try {
                         const [responseCita, responseEquipo] = await Promise.allSettled([
-                            fetch('https://projectppi-backend-production.up.railway.app/citas-asesoria-ppi/' + id, requestOptionsCita),
-                            fetch('https://projectppi-backend-production.up.railway.app/hora-semanal/' + data[0].id, requestOptionsEquipo)
+                            fetch('http://localhost:3002/citas-asesoria-ppi/' + id, requestOptionsCita),
+                            fetch('http://localhost:3002/hora-semanal/' + data[0].id, requestOptionsEquipo)
                         ]);
- 
+
                         if (responseCita.status === 'fulfilled' && responseEquipo.status === 'fulfilled') {
                             setShowCorrecto(true);
-                            setTimeout(() => {
-                                router.push('/asesorias/visualizar/asesor');
-                            }, 2000);
+                            const requestOptions = {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' }
+                            };
+                            const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/cita/' + cita.id, requestOptions);
+
+                            if (response.ok) {
+                                setTimeout(() => {
+                                    router.push('/asesorias/visualizar/asesor');
+                                }, 2000);
+                            }
                         } else {
+                            alert()
                             setShowAlert(true);
                         }
                     } catch (error) {
+                        alert(error)
                         setShowAlert(true);
                     }
                 }
             } else {
                 setShowAlert(true)
-            } 
+            }
         } else {
             setShowCamposVacios(true)
         }
@@ -581,7 +588,7 @@ function page({ params }) {
                                     <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estudiantes:</h1>
                                 </div>
                                 <div className='block'>
-                                    {estudiantesEquipo.map((item) => (
+                                    {estudiantesEquipo && estudiantesEquipo.map((item) => (
                                         <span key={item.id} className=" text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3">
                                             {item.nombre}
                                         </span>
