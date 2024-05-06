@@ -15,6 +15,8 @@ function Page() {
     const [groupsJSON, setGroupsJSON] = useState([]);
     const [loading, setLoading] = useState(false);
     const [popupMessage, setPopupMessage] = useState('');
+    const [studentsWithoutGroup, setStudentsWithoutGroup] = useState([]);
+    const [groupedStudents, setGroupedStudents] = useState({});
 
     useEffect(() => {
         const fetchUsersBySemester = async () => {
@@ -38,8 +40,29 @@ function Page() {
             }
         };
 
+        const fetchGroupsByFirstDigit = async () => {
+            try {
+                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupsByFirstDigit/' + semester);
+                if (!response.ok) {
+                    throw new Error('Error al obtener los grupos por primer dígito');
+                }
+                const data = await response.json();
+                const grouped = {};
+                data.forEach(student => {
+                    if (!grouped[student.Codigo_Equipo]) {
+                        grouped[student.Codigo_Equipo] = [];
+                    }
+                    grouped[student.Codigo_Equipo].push(student.Usuario_Nombre);
+                });
+                setGroupedStudents(grouped);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
         if (semester !== '') {
             fetchUsersBySemester();
+            fetchGroupsByFirstDigit();
             if (parseInt(semester) >= 1 && parseInt(semester) <= 4) {
                 setProgram('Técnica Profesional en Programación de Sistemas de Información');
             } else if (parseInt(semester) >= 5 && parseInt(semester) <= 6) {
@@ -49,7 +72,11 @@ function Page() {
     }, [semester]);
 
     useEffect(() => {
-    }, [groupsJSON]);
+        const allStudents = users.map(user => user.Usuario_Nombre);
+        const studentsWithGroup = Object.values(groupedStudents).flat();
+        const studentsWithoutGroup = allStudents.filter(student => !studentsWithGroup.includes(student));
+        setStudentsWithoutGroup(studentsWithoutGroup);
+    }, [users, groupedStudents]);
 
     const handleSemesterChange = (event) => {
         setSemester(event.target.value);
@@ -104,10 +131,10 @@ function Page() {
             });
 
             if (!response.ok) {
-                throw new Error('Error al cargar los grupos');
+                throw new Error('Error al cargar los equipos');
             }
 
-            setPopupMessage('¡Carga Lista! Los grupos han sido creados exitosamente');
+            setPopupMessage('¡Carga Lista! Los equipos han sido creados exitosamente');
 
             setTimeout(() => {
                 setPopupMessage('');
@@ -155,12 +182,34 @@ function Page() {
                                 <div>
                                     <br />
                                     <h2>Estudiantes de Semestre {semester} en {program}</h2>
-                                    <br />
-                                    <ul>
-                                        {users.map(user => (
-                                            <li key={user.Usuario_ID}>{user.Usuario_Nombre}</li>
+                                    {studentsWithoutGroup.length > 0 && (
+                                        <>
+                                            <br /><h2 className="text-lg font-medium text-gray-700">Estudiantes sin Equipo</h2>
+                                            <br />
+                                            <ul>
+                                                {studentsWithoutGroup.map((student, index) => (
+                                                    <li key={index}>{`• ${student}`}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+                                    <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
+                                        {Object.entries(groupedStudents).map(([group, students]) => (
+                                            <div key={group} className="bg-white overflow-hidden shadow rounded-lg">
+                                                <div className="px-4 py-5 sm:p-6">
+                                                    <h3 className="bg-gray-100 text-lg font-medium text-gray-900">Equipo {group}</h3>
+                                                    <ul>
+                                                        {students.map((student, index) => (
+                                                            <div key={index} className="rounded-lg p-4 flex items-center">
+                                                                <span className="text-green-500 text-xl font-bold mr-2">•</span>
+                                                                <span>{student}</span>
+                                                            </div>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
                                         ))}
-                                    </ul>
+                                    </div>
                                 </div>
                             )}
                             <div>
