@@ -15,22 +15,58 @@ function Page() {
     const [fechaCalificacion, setFechaCalificacion] = useState({});
     const [rolSeleccionado, setRolSeleccionado] = useState({});
     const [porcentajeIngresado, setPorcentajeIngresado] = useState({});
+    const [popupVisible, setPopupVisible] = useState(false); // Estado para controlar la visibilidad del popup
 
     useEffect(() => {
-        const fetchEntregas = async () => {
+        const fetchEntregasAndSettings = async () => {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/tipo-entrega/GetAllEntregas');
-                if (!response.ok) {
+                // Obtener todas las entregas
+                const responseEntregas = await fetch('https://td-g-production.up.railway.app/tipo-entrega/GetAllEntregas');
+                if (!responseEntregas.ok) {
                     throw new Error('Error al obtener las entregas');
                 }
-                const data = await response.json();
-                setEntregas(data);
+                const dataEntregas = await responseEntregas.json();
+                setEntregas(dataEntregas);
+
+                // Obtener las configuraciones de entrega
+                const responseSettings = await fetch('https://td-g-production.up.railway.app/configuracion-entrega/AllEntregaSettings');
+                if (!responseSettings.ok) {
+                    throw new Error('Error al obtener las configuraciones de entrega');
+                }
+                const dataSettings = await responseSettings.json();
+
+                // Mapear las configuraciones de entrega a las entregas correspondientes
+                const updatedFechaEntrega = {};
+                const updatedFechaCalificacion = {};
+                const updatedPorcentajeIngresado = {};
+                const updatedRolSeleccionado = {};
+                dataEntregas.forEach(entrega => {
+                    const setting = dataSettings.find(setting => setting.nombre === entrega.nombre);
+                    if (setting) {
+                        updatedFechaEntrega[entrega.id] = setting.fechaentrega ? new Date(setting.fechaentrega) : null;
+                        updatedFechaCalificacion[entrega.id] = setting.fechacalificacion ? new Date(setting.fechacalificacion) : null;
+                        updatedPorcentajeIngresado[entrega.id] = setting.porcentaje;
+                        updatedRolSeleccionado[entrega.id] = setting.rol;
+                    } else {
+                        updatedFechaEntrega[entrega.id] = null;
+                        updatedFechaCalificacion[entrega.id] = null;
+                        updatedPorcentajeIngresado[entrega.id] = '';
+                        updatedRolSeleccionado[entrega.id] = '';
+                    }
+                });
+
+                setFechaEntrega(updatedFechaEntrega);
+                setFechaCalificacion(updatedFechaCalificacion);
+                setPorcentajeIngresado(updatedPorcentajeIngresado);
+                setRolSeleccionado(updatedRolSeleccionado);
             } catch (error) {
                 console.error(error);
             }
         };
-        fetchEntregas();
+
+        fetchEntregasAndSettings();
     }, []);
+
 
     const handlePorcentajeChange = (event, entregaId) => {
         const value = parseInt(event.target.value);
@@ -74,27 +110,63 @@ function Page() {
         }
     };
 
-    const handleGuardarEntregas = () => {
-        // Crear un array para almacenar la información de cada entrega
-        const entregasData = [];
+    const validarPorcentajes = () => {
+        // Calcular la suma de todos los valores ingresados en el campo de porcentaje
+        const sumaPorcentajes = entregas.reduce((total, entrega) => {
+            const porcentaje = parseInt(porcentajeIngresado[entrega.id] || 0);
+            return total + porcentaje;
+        }, 0);
 
-        // Recorrer todas las entregas para obtener su información
-        entregas.forEach(entrega => {
-            // Crear un objeto para almacenar la información de esta entrega
-            const entregaInfo = {
+        // Verificar si la suma de los porcentajes es igual a 100
+        if (sumaPorcentajes !== 100) {
+            alert('Configuración fallida, la suma de todos los porcentajes debe ser 100.');
+            return false; // No se permite guardar las entregas
+        }
+
+        return true; // Se permite guardar las entregas
+    };
+
+    const handleGuardarEntregas = async () => {
+        try {
+            // Validar los porcentajes antes de guardar las entregas
+            if (!validarPorcentajes()) {
+                return; // Salir si la validación falla
+            }
+
+            // Obtener solo los datos de las entregas para enviar al servidor
+            const entregasData = entregas.map(entrega => ({
                 id: entrega.id,
                 nombre: entrega.nombre,
                 rol: rolSeleccionado[entrega.id],
                 porcentaje: porcentajeIngresado[entrega.id],
                 fechaEntrega: fechaEntrega[entrega.id],
                 fechaCalificacion: fechaCalificacion[entrega.id]
-            };
-            // Agregar la información de esta entrega al array de entregasData
-            entregasData.push(entregaInfo);
-        });
+            }));
 
-        // Mostrar el array de entregasData en la consola como JSON
-        console.log('Entregas guardadas:', JSON.stringify(entregasData, null, 2));
+            // Realizar la solicitud POST al endpoint
+            const response = await fetch('https://td-g-production.up.railway.app/configuracion-entrega/SetEntregaSettings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(entregasData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al guardar las entregas');
+            }
+
+            // Si la solicitud fue exitosa, mostrar el popup y esperar 1300 milisegundos antes de refrescar la página
+            setPopupVisible(true);
+            setTimeout(() => {
+                setPopupVisible(false);
+                window.location.reload();
+            }, 1300);
+        } catch (error) {
+            console.error(error);
+            // En caso de error, mostrar un mensaje de error
+            alert('Error al guardar las entregas');
+        }
     };
 
     const fechaActualColombia = addHours(new Date(), -5);
@@ -123,17 +195,48 @@ function Page() {
                 </div>
                 <div className='p-10'>
                     <div className="mt-5">
-                        <p>En esta ventana, podrás configurar qué rol se encargará de calificar cada entrega durante este semestre y el porcentaje que tendrá cada una sobre la calificación final. Además, podrás elegir la fecha límite para que los estudiantes carguen cada una de las entregas, así como la fecha límite para que cada rol pueda calificar cada entrega. Una vez hayas configurado todo, haz click en el botón &quot;Guardar Entregas&quot;.</p><br></br>
+                        <p>A continuación, podrás configurar cada una de las entregas del semestre en curso. Para obtener más información de cada columna, pon el cursor encima de cada título. Revisa que todo esté como quieres y una vez que todas las entregas tengan la configuración que quieres, haz click en el botón &quot;Guardar Entregas&quot;.</p><br></br>
                         <div className="table-container">
                             <table className="table">
                                 <thead>
                                     <tr>
-                                        <th>Entrega</th>
-                                        <th>Rol</th>
-                                        <th>Porcentaje</th>
-                                        <th>Fecha de Entrega</th>
-                                        <th>Fecha de Calificación</th>
+                                        <th
+                                            title='Estas son las entregas que tendrá el semestre.'
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            Entrega
+                                        </th>
+                                        <th
+                                            title='Usa este desplegable para definir quién va a calificar esta entrega. Puedes escoger entre Asesor, Docente y Coordinador.'
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            Rol
+                                        </th>
+                                        <th
+                                            title='Usa esta casilla para definir cuánto valdrá esta entrega en el semestre, el valor debe ir de 1 a 100 y la suma de todos los valores debe dar 100.'
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            Porcentaje
+                                        </th>
+                                        <th
+                                            title='Usa esta casilla para definir la fecha y hora máxima que tendrán los estudiantes para cargar el archivo que corresponde a esta entrega al sistema, una vez pasada esta fecha, la entrega no recibirá más archivos.'
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            Fecha de Entrega
+                                        </th>
+                                        <th
+                                            title='Usa esta casilla para definir la fecha y hora máxima que tendrán los docentes para cargar la calificación de esta entrega al sistema, una vez pasada esta fecha, la entrega no recibirá más calificaciones.'
+                                            style={{ cursor: 'pointer' }}
+                                            onClick={(e) => e.preventDefault()}
+                                        >
+                                            Fecha de Calificación
+                                        </th>
                                     </tr>
+
                                 </thead>
                                 <tbody>
                                     {entregas.map(entrega => (
@@ -208,6 +311,31 @@ function Page() {
                     </div>
                 </div>
             </div>
+            {/* Popup */}
+            {popupVisible && (
+                <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                <div className="sm:flex sm:items-start">
+                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                                        <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-headline">
+                                            ¡Carga Exitosa!
+                                        </h3>
+                                        <div className="mt-2">
+                                            <p className="text-sm text-gray-500">
+                                                Las entregas han sido configuradas correctamente.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
