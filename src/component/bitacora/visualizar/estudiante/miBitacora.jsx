@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns';
 import './css/style.css'
+import CryptoJS from 'crypto-js';
 
 function miBitacora() {
 
@@ -10,10 +11,15 @@ function miBitacora() {
     const [estudiantes, setEstudiantes] = useState([])
     const [asistencia, setAsistencia] = useState([])
     const [seguimiento, setSeguimiento] = useState([])
+    const [usuario, setUsuario] = useState([])
 
     useEffect(() => {
         const traerBitacora = async () => {
-            const response = await fetch('http://localhost:3002/equipo-usuarios/EstudiantesBitacora/Daniel@gmail.com/123456789');
+            const usuarioNest = localStorage.getItem('U2FsdGVkX1');
+            const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
+            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+            setUsuario(usuarioN)
+            const response = await fetch(`http://localhost:3002/equipo-usuarios/EstudiantesBitacora/${usuarioN.correo}/${usuarioN.clave}`);
             if (response.ok) {
                 const data = await response.json()
                 setBitacora(data)
@@ -141,7 +147,7 @@ function miBitacora() {
                                     return (
                                         <tr key={item.id}>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-400">{item.id}</td>
-                                            <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-400">{format(item.citas.fecha, 'dd/MM/yyyy')}</td>
+                                            <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-400">{format(item.citas.fecha, 'MMMM dd', { locale: es })}</td>
                                             <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-400">{item.compromiso} </td>
                                             <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-400">{item.observacion} </td>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-gray-400 text-center">{
@@ -154,7 +160,7 @@ function miBitacora() {
                                                 })
                                             }
                                             </td><td className="whitespace-normal px-4 py-2 text-center flex text-gray-700">
-                                                <a href={'/seguimientos/visualizar/' + item.id} className=' flex items-center justify-center'>
+                                                <a href={'/component/seguimientos/visualizar/' + item.id} className=' flex items-center justify-center'>
                                                     <div className='p-3 rounded-full bg-gray-600'>
                                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" class="w-6 h-6">
                                                             <path fill-rule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clip-rule="evenodd" />

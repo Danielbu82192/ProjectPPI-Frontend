@@ -2,6 +2,8 @@
 "use client"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from "next/navigation";
+import { format, parseISO } from 'date-fns';
+import CryptoJS from 'crypto-js';
 
 
 function calendario() {
@@ -9,60 +11,69 @@ function calendario() {
     const [dias, setDias] = useState([]);
     const [showAlert, setShowAlert] = useState(false);
     const [showNoAseaorias, setShowNoAseaorias] = useState(false);
-
+    const [numSemana, setNumSemana] = useState([])
     const [diasConst, setDiasConst] = useState(['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const [numeroDiaLunes, setNumeroDiaLunes] = useState(null);
+    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/05/2024"));
+    const [idAsesor, setIdAsesor] = useState()
     let horasid = '';
     const horasIniciales = 6; // Hora inicial para empezar
     let minutosConst = 0; // Minutos iniciales
     const intervaloMinutos = 20; // Intervalo de minutos
     let variables = (horasIniciales / intervaloMinutos) * 10;
     let cuentas = 0;
-    let idAsesor = 0;
     let cont = -1;
     let contador = 0 // Minutos iniciales
     const calcularNumeroDiaLunes = (fecha) => {
         const diaSemana = fecha.getDay();
         const numeroDia = fecha.getDate();
-        return numeroDia - diaSemana + 1;
+        const fechaAc = fechaPruebas;
+        fechaAc.setDate(numeroDia - diaSemana + 1)
+        return fechaAc.getDate();
     };
+
 
 
     const router = useRouter();
     const visualizarCita = (id) => {
-        router.push('/asesorias/visualizar/asesor/' + id);
+        router.push('/component/asesorias/visualizar/asesor/' + id);
     }
 
     const Login = async () => {
-        const response = await fetch(`http://localhost:3002/usuario/Juan@gmail.com/123456789`);
-        const data = await response.json();
-        if (response.ok) {
-            idAsesor = data[0].id;
-            processAsesor();
-
-        } else {
-            showAlert(true);
+        const usuarioNest = localStorage.getItem('U2FsdGVkX1');
+        if (usuarioNest != null) {
+            const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
+            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8)) 
+            setIdAsesor(usuarioN.id)
+            busacrCitas(usuarioN.id)
         }
     }
 
-    function processAsesor() {
 
-        busacrCitas();
+    const llenarDiasNumeros = (fecha) => {
+        const fechaLunes = new Date(fecha)
+        setNumSemana([])
+        for (let index = 0; index < diasConst.length; index++) {
+            if (index != 0) {
+                const nuevaFecha = new Date(fechaLunes);
+                nuevaFecha.setDate(fechaLunes.getDate() + index - 1);
+                setNumSemana(prev => [...prev, [diasConst[index], nuevaFecha.getDate()]]);
+            }
+        }
+
+
     }
-
-    const busacrCitas = async () => {
-        const fechaActual = new Date();
-        const fechaLunes = new Date(fechaActual);
-        fechaLunes.setDate(numeroDiaLunes)
-        const fechaSabado = new Date(fechaActual);
-        fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay());
-        fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
-        const fechaInicio = fechaLunes.toISOString().split('T')[0];
-        const fechaFin = fechaSabado.toISOString().split('T')[0];
-        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+    const busacrCitas = async (id) => {
+        const fechaLunes = fechaPruebas;
+        fechaLunes.setDate(fechaLunes.getDate() - fechaLunes.getDay() + 1);
+        llenarDiasNumeros(fechaLunes)
+        const fechaSabado = new Date(fechaLunes);
+        fechaSabado.setDate(fechaLunes.getDate() + 5);
+        const fechaInicio = format(fechaLunes, 'yyyy-MM-dd');
+        const fechaFin = format(fechaSabado, 'yyyy-MM-dd');
+        const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + id);
         const data = await response.json();
         if (response.ok) {
-            console.log(data)
             data.map((item) => {
                 const horaCompleta = item.hora;
                 const [hora, minutos] = horaCompleta.split(':');
@@ -70,8 +81,7 @@ function calendario() {
                 const minutosFormateados = minutos.toString().padStart(2, '0');
                 const fechaCompleta = new Date(item.fecha);
                 const diaSemana = fechaCompleta.getDay();
-                const numeroDia = fechaCompleta.getDate();
-                const id = `${horaFormateada}:${minutosFormateados}/${diasConst[diaSemana]} ${numeroDia}`;
+                const id = `${horaFormateada}:${minutosFormateados}/${diaSemana - 1}`;
                 const div = document.getElementById(id);
                 if (div) {
                     if (item.estadoCita.id == 1) {
@@ -80,7 +90,7 @@ function calendario() {
                         } else if (item.tipoCita.id == 2) {
                             div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-indigo-300 hover:bg-indigo-400 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.estadoCita.nombre}</button>`;
                         }
-                    } else if (item.estadoCita.id == 2 || item.estadoCita.id == 6) {
+                    } else if (item.estadoCita.id == 2) {
                         if (item.tipoCita.id == 1) {
                             div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-green-500 hover:bg-green-600 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
                         } else if (item.tipoCita.id == 2) {
@@ -90,6 +100,9 @@ function calendario() {
                         div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
                     } else if (item.estadoCita.id == 3) {
                         div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-blue-400 hover:bg-blue-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
+                    } else if (item.estadoCita.id == 6 || item.estadoCita.id == 7) {
+                        div.innerHTML = `<button id="button-${item.id}" class="text-white py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">${item.equipocita.codigoEquipo}</button>`;
+
                     }
                     const button = document.getElementById(`button-${item.id}`);
                     button.addEventListener('click', () => visualizarCita(item.id));
@@ -105,7 +118,7 @@ function calendario() {
 
 
     useEffect(() => {
-        const fecha = new Date(); // O cualquier otra fecha que desees
+        const fecha = fechaPruebas; // O cualquier otra fecha que desees
         const numeroDia = calcularNumeroDiaLunes(fecha);
         setNumeroDiaLunes(numeroDia);
         Login();
@@ -135,21 +148,18 @@ function calendario() {
                 <div>
 
                 </div>
-                {(() => {
-                    const elementos = [];
-                    for (let i = 0; i <= 5; i++) {
-                        elementos.push(
-                            <div key={i} className='border-l border-gray-300'>
-                                <p className="font-bold text-gray-700 text-xl">{numeroDiaLunes + i}</p>
-                                <p className="text-gray-400">{diasConst[i + 1]}</p>
-                            </div>
-                        );
-                    }
-                    return elementos;
-                })()}
+                {
+                    numSemana.map((item) => (
+                        <div key={item[1]} className='border-l border-gray-300'>
+                            <p className="text-gray-400">{item[1]}</p>
+                            <p className="font-bold text-gray-700 text-xl">{item[0]}</p>
+
+                        </div>
+                    ))
+                }
             </div>
 
-            {matriz.map((fila, indiceFila) => (
+            {numSemana.length > 1 && matriz.map((fila, indiceFila) => (
                 <div key={indiceFila} className='grid grid-cols-7 border-r  border-gray-300'>
                     {fila.map((_, indiceColumna) => {
                         if (indiceColumna % 7 === 0) {
@@ -171,11 +181,12 @@ function calendario() {
                             );
                         } else {
                             cont += 1;
+
                             if (cont == 6) {
                                 cont = 0
-                            }  // Incrementar cont para obtener el índice correcto en el array `dias`
+                            }
                             return (
-                                <div key={indiceColumna} id={horasid + '/' + diasConst[cont + 1] + ' ' + (numeroDiaLunes + cont)} className='border-t border-l border-gray-300'>
+                                <div key={indiceColumna} id={horasid + '/' + cont} className='border-t border-l border-gray-300'>
 
                                 </div>
                             );

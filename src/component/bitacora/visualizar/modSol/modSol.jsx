@@ -1,6 +1,7 @@
 "use client"
 /* eslint-disable react-hooks/rules-of-hooks */
 import React, { useState, useEffect } from 'react'
+import CryptoJS from 'crypto-js';
 
 function modSol() {
 
@@ -77,10 +78,14 @@ function modSol() {
         }
 
         const login = async () => {
-            const response = await fetch('http://localhost:3002/usuario/Camila@gmail.com/123456789');
-            const data = await response.json();
-            if (response.ok) {
-                setUsuarioSol(data[0]) 
+            const usuarioNest = localStorage.getItem('U2FsdGVkX1');
+            const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
+            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8)) 
+            const response = await fetch(`http://localhost:3002/usuario/${usuarioN.correo}/${usuarioN.clave}`);
+            const data = await response.json(); 
+            if (response.ok) { 
+                console.log(data)
+                setUsuarioSol(data)
             }
         }
         login()
@@ -120,26 +125,24 @@ function modSol() {
             </div>
             <div className='mt-5'>
                 <div className='grid grid-cols-2 sm:grid-cols-4   xl:grid-cols-9 gap-5'>
-                    {Object.entries(auxEquipo).map(([key, value]) => { 
+                    {Object.entries(auxEquipo).map(([key, value]) => {
                         const bitacora = value.bitacora
-                        const modSol = value.moduloSol[0]
-                        if (usuarioSol.length != 0) { 
-
-                            console.log(modSol) 
+                        const modSol = value.moduloSol[0] 
+                        if (usuarioSol != null) {  
                             if (modSol.id == usuarioSol.id) {
                                 return (
                                     <div key={key} className='sm:mt-3'>
-                                        <a href={bitacora.length == 0 ? '/bitacora/visualizar/modSol/' + key : '/bitacora/visualizar/asesor/' + bitacora[0].id} className={bitacora.length == 0 ? 'py-3 px-10 cursor-pointer rounded-xl text-lg border-2 font-bold text-red-600 border-red-600 hover:text-white hover:border-red-600 hover:bg-red-600' : 'py-3 px-10 rounded-xl text-lg border-2 font-bold text-emerald-600 border-emerald-600 hover:text-white hover:border-emerald-600 hover:bg-emerald-600'}>
+                                        <a href={bitacora.length == 0 ? '/component/bitacora/visualizar/modSol/' + key : '/component/bitacora/visualizar/asesor/' + bitacora[0].id} className={bitacora.length == 0 ? 'py-3 px-10 cursor-pointer rounded-xl text-lg border-2 font-bold text-red-600 border-red-600 hover:text-white hover:border-red-600 hover:bg-red-600' : 'py-3 px-10 rounded-xl text-lg border-2 font-bold text-emerald-600 border-emerald-600 hover:text-white hover:border-emerald-600 hover:bg-emerald-600'}>
                                             {key}
                                         </a>
 
                                     </div>
                                 )
                             }
-                        }else{
-                            return(
+                        } else {
+                            return (
                                 <>
-                                <h1>No hay equipos creados a tu nombre</h1>
+                                    <h1>No hay equipos creados a tu nombre</h1>
                                 </>
                             )
                         }

@@ -24,7 +24,7 @@ export default function asesor() {
 
   useEffect(() => {
     const traerBitacoras = async () => {
-      const response = await fetch('https://projectppi-backend-production.up.railway.app/equipo-ppi');
+      const response = await fetch('http://localhost:3002/equipo-ppi');
       const data = await response.json();
       if (response.ok) {
         setBitacoras(data)
@@ -37,7 +37,7 @@ export default function asesor() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const response2 = await fetch('https://projectppi-backend-production.up.railway.app/equipo-usuarios/Estudiantes');
+      const response2 = await fetch('http://localhost:3002/equipo-usuarios/Estudiantes');
       const data2 = await response2.json();
       setEstudiantes(data2)
     };
@@ -66,7 +66,7 @@ export default function asesor() {
       <div className='grid mt-5 grid-cols-1'>
 
         {auxBitacoras.map((item) => (
-          <a key={item.id} href={'/bitacora/visualizar/asesor/' + item.id}>
+          <a key={item.id} href={'/component/bitacora/visualizar/asesor/' + item.id}>
             <div className='px-5 grid xl:grid-cols-3 lg:grid-cols-3 sm:grid-cols-3  grid-cols-1 items-center cursor-pointer border-2 my-2 border-gray-300 rounded-lg shadow-md hover:shadow-lg p-4 '>
               <div className='mb-4  sm:mb-0 sm:mr-4'>
                 <span className='text-xl font-bold text-gray-600'>

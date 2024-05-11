@@ -104,17 +104,32 @@ function seguimientoMod({ idSeguimiento, idEstado }) {
                 };
                 const response = await fetch('http://localhost:3002/seguimiento-ppi/' + id, requestOptions);
                 if (response.ok) {
-                    asistencia.forEach(async (element, index) => {
+                    let dato = {
+                    }
+
+                    for (let index = 0; index < 3; index++) {
                         const nombre1 = "asistenciaEstudiante" + (index + 1)
+                        if (asistencia[index] != null) {
+                            const aux = asistencia[index]
+                            dato[nombre1] = aux[1]
+                        }
+                    }
+                    const requestOptions = {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dato)
+                    };
+                    const response = await fetch('http://localhost:3002/seguimiento-ppi/Asistencia/' + id, requestOptions);
+                    if (response.ok) {
                         const dato = {
-                            [nombre1]: element[1],
+                            "estadoCita": 3
                         }
                         const requestOptions = {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(dato)
                         };
-                        const response = await fetch('http://localhost:3002/seguimiento-ppi/Asistencia/' + element[0], requestOptions);
+                        const response = await fetch('http://localhost:3002/citas-asesoria-ppi/' + cita.id, requestOptions);
                         if (response.ok) {
                             const dato = {
                                 "estadoSeguimiento": 2,
@@ -125,14 +140,14 @@ function seguimientoMod({ idSeguimiento, idEstado }) {
                                 body: JSON.stringify(dato)
                             };
                             const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/' + idEstado, requestOptions);
-                            if (response.ok)
+                            if (response.ok) {
                                 setShowCorrecto(true);
+                                setTimeout(() => {
+                                    router.back();
+                                }, 2000);
+                            }
                         }
-                    });
-
-                    setTimeout(() => {
-                        router.back();
-                    }, 2000);
+                    }
                 }
             }
         } else {
@@ -234,7 +249,7 @@ function seguimientoMod({ idSeguimiento, idEstado }) {
 
             </div>
             <div className='mt-5'>
-                {estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date('04/26/2024').getDate()) ? (<button onClick={() => { modificarSeguimiento() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
+                {estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date().getDate()) ? (<button onClick={() => { modificarSeguimiento() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
                 ) : (null)}
             </div>
             {showAlert && (

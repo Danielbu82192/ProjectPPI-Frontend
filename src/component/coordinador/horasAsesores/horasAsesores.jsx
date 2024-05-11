@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns';
 
-function horasAsesores() {
+function horasAsesores({ fechaInicio, fechaFin }) {
 
     const [asesor, setAsesor] = useState([])
     const [auxAsesor, setAuxAsesor] = useState([])
@@ -17,66 +17,44 @@ function horasAsesores() {
         const numeroDia = fecha.getDate();
         return numeroDia - diaSemana + 1;
     };
-
     useEffect(() => {
         const cargarAsesor = async () => {
-            const response = await fetch(`http://localhost:3002/usuario/asesor`);
-            const data = await response.json();
-            if (response.ok) {
-                const fechaActual = new Date();
-                const fechaLunes = new Date(fechaActual);
-                fechaLunes.setDate(calcularNumeroDiaLunes(new Date()))
-                const fechaSabado = new Date(fechaActual);
-                fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay());
-                fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
-                const fechaInicio = fechaLunes.toISOString().split('T')[0];
-                const fechaFin = fechaSabado.toISOString().split('T')[0];
-                for (const element of data) {
-                    const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + element.id);
-                    const data2 = await response2.json();
-                    const response = await fetch(`http://localhost:3002/usuario/asesor`);
-                    const data = await response.json();
-                    if (response.ok) {
-                        const fechaActual = new Date();
-                        const fechaLunes = new Date(fechaActual);
-                        fechaLunes.setDate(calcularNumeroDiaLunes(new Date()))
-                        const fechaSabado = new Date(fechaActual);
-                        fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay());
-                        fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
-                        const fechaInicio = fechaLunes.toISOString().split('T')[0];
-                        const fechaFin = fechaSabado.toISOString().split('T')[0];
-                        for (const element of data) {
-                            try {
-                                const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + element.id);
-                                const data2 = await response2.json();
-                                let citasCumplidas = 0
-                                let citasCanceladas = 0
-                                for (const element2 of data2) {
-                                    if (element2.estadoCita.id == 3) {
-                                        citasCumplidas = citasCumplidas + 1
-                                    }else if (element2.estadoCita.id == 4||element2.estadoCita.id==5) {
-                                        citasCanceladas = citasCanceladas + 1
-                                    }
+            if (fechaInicio != null && fechaFin != null) {
+                const response = await fetch(`http://localhost:3002/usuario/asesor`);
+                const data = await response.json();
+                if (response.ok) {
+                    for (const element of data) {
+                        try {
+                            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + element.id);
+                            const data2 = await response2.json();
+                            let citasCumplidas = 0
+                            let citasCanceladas = 0
+                            console.log(data2)
+                            for (const element2 of data2) {
+                                if (element2.estadoCita.id == 3) {
+                                    citasCumplidas = citasCumplidas + 1
+                                } else if (element2.estadoCita.id == 4 || element2.estadoCita.id == 5) {
+                                    citasCanceladas = citasCanceladas + 1
                                 }
-                                element.Cumplidas = citasCumplidas
-                                element.Creadas = data2.length
-                                element.Canceladas = citasCanceladas
-                            } catch (error) {
-                                element.Cumplidas = 0
-                                element.Creadas=0
-                                element.Canceladas = 0
                             }
-
+                            element.Cumplidas = citasCumplidas
+                            element.Creadas = data2.length
+                            element.Canceladas = citasCanceladas
+                        } catch (error) {
+                            element.Cumplidas = 0
+                            element.Creadas = 0
+                            element.Canceladas = 0
                         }
-                        setAsesor(data)
-                        setAuxAsesor(data)
+
                     }
+                    setAsesor(data)
+                    setAuxAsesor(data)
                 }
             }
         }
 
         cargarAsesor()
-    }, []);
+    }, [fechaInicio, fechaFin]);
 
     const filtrarInput = (valor) => {
         if (valor === "" || valor.length === 0) {
@@ -261,7 +239,7 @@ function horasAsesores() {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {auxAsesor.map((item, index) => {
-                                const horas = item.hora[0] 
+                                const horas = item.hora[0]
                                 if (index >= currentPage * 10 && index < (currentPage + 1) * 10) {
 
                                     return (
