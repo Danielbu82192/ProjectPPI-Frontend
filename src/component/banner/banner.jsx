@@ -105,9 +105,9 @@ const SlideBanner = () => {
     if (banners.length > 0) {
         if (banners.length === 1) {
             return (
-                <>  
+                <>
                     <img src={banners[0].urlImagen} className="object-cover min-w-[100%] rounded-lg" loading="eager" alt="" onClick={() => openModal(banners[0])} />
-                    {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, selectedBanner.urlImagen, true, closeModal)}
+                    {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, true, closeModal)}
                 </>
             )
         }
@@ -115,10 +115,10 @@ const SlideBanner = () => {
             <>
                 <Zoom {...zoomInPropieties}>
                     {banners.map((banner, index) => (
-                        <img key={index} src={banner.urlImagen} className="object-cover min-w-[100%]" loading="eager" alt="" onClick={() => openModal(banner)} />
+                        <img key={index} src={`http://localhost:3002${banner.urlImagen}`} className="object-cover min-w-[100%]" loading="eager" alt="" onClick={() => openModal(banner)} />
                     ))}
                 </Zoom>
-                {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, selectedBanner.urlImagen, true, closeModal)}
+                {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, true, closeModal)}
             </>
         );
     } else {
@@ -158,7 +158,7 @@ const SlideNewsCard = () => {
                     }}
                 >
                     {news.map((each, index) => (
-                        <NewCard key={index} newTitle={each.contenidoBanner} newContent={each.nombre} newImage={each.urlImagen} />
+                        <NewCard key={index} newTitle={each.contenidoBanner} newContent={each.nombre} newImage={`http://localhost:3002${each.urlImagen}`} />
                     ))}
                 </div>
             </div>

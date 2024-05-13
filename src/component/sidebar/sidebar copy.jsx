@@ -25,7 +25,7 @@ function sidebar({ children }) {
     contSlidebar.classList.toggle("inactive");
     setClick(false);
   }
-  
+
   const obtenerNotifications = async () => {
     try {
       const response = await fetch(`http://localhost:3002/notificaciones/Pendientes`);
@@ -37,7 +37,7 @@ function sidebar({ children }) {
       console.error('Error fetching notifications:', error);
     }
   };
-  
+
   useEffect(() => {
     obtenerNotifications();
   }, []);
@@ -288,11 +288,11 @@ function sidebar({ children }) {
             </ul>
           </div>
         </div>
-        <div className='h-screen w-screen bg-gray-50' onClick={click ? hiddenSidebar : null}>
-          <div id='contSlidebar' className={`ml-40 min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-800 ${click ? 'hidden' : 'flex'}`}>
-            {children}
-          </div>
+        <div id='contSlidebar' className={`min-h-screen flex flex-col flex-auto flex-shrink-0 antialiased bg-gray-50 text-gray-800 ${click ? 'hidden' : 'flex'}`}>
+          {children}
         </div>
+        {/* <div className='h-screen w-screen bg-gray-50' onClick={click ? hiddenbar : null}>
+        </div> */}
 
 
       </div ></>
