@@ -21,6 +21,7 @@ export const createFolderInS3 = async (folderPath) => {
     return data;
   } catch (error) {
     console.error("Error al crear la carpeta en S3:", error);
+
     throw error;
   }
 };

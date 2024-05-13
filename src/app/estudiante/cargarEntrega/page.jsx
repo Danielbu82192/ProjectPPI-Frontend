@@ -19,13 +19,6 @@ function Page() {
     }, []);
 
     useEffect(() => {
-        AWS.config.update({
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        });
-      }, []);
-
-    useEffect(() => {
         const fetchEquipoUsuarios = async () => {
             try {
                 const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/57660');
