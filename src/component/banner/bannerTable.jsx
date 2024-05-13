@@ -1,7 +1,8 @@
 "use client"
 import React, { useState, useEffect } from "react"
-import { format } from 'date-fns';
- 
+// import { format } from 'date-fns';
+import { format } from 'date-fns-tz';
+
 function BannerTable() {
     const [banners, setBanners] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
@@ -91,15 +92,10 @@ function BannerTable() {
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {banners.map((item, index) => {
-
-                            const fechaAux = new Date(item.fechaInicio); 
-                            fechaAux.setUTCHours(fechaAux.getUTCHours() - 5);  
-                            const startDate = format(fechaAux, 'yyyy-MM-dd');  
-                            const fechaAux2 = new Date(item.fechaFin); 
-                            fechaAux2.setUTCHours(fechaAux2.getUTCHours() - 5);  
-                            const endDate = format(fechaAux2, 'yyyy-MM-dd');    
-                            const currentDate = new Date().getDate();
-                            let tdBgClass = !(currentDate >= startDate && currentDate <= endDate) ? 'line-through' : '';
+                            const timeNow = new Date();
+                            const currentDate = format(timeNow, 'yyyy-MM-dd', { timeZone: 'America/Bogota' });
+                            const startDate = item.fechaInicio;
+                            const endDate = item.fechaFin;
                             let trBgClass = item.estado === 0 ? 'bg-slate-100' : '';
                             if (index >= currentPage * 5 && index < (currentPage + 1) * 5) {
                                 return (
@@ -108,12 +104,12 @@ function BannerTable() {
                                         <td className="min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-left text-gray-500 ">{item.nombre}</td>
                                         <td className="min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-left text-gray-500">{item.contenidoBanner}</td>
                                         <td className="min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-center text-gray-500">{item.tipoBanner === 1 ? 'Banner' : 'Noticia'}</td>
-                                        <td className={`min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-center text-gray-500 ${tdBgClass}`}>{formatDate(item.fechaInicio)}</td>
-                                        <td className={`min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-center text-gray-500 ${tdBgClass}`}>{formatDate(item.fechaFin)}</td>
+                                        <td className={`min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-center text-gray-500 ${currentDate >= startDate ? null : 'line-through'}`}>{formatDate(item.fechaInicio)}</td>
+                                        <td className={`min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-center text-gray-500 ${currentDate <= endDate ? null : 'line-through'}`}>{formatDate(item.fechaFin)}</td>
                                         <td className="min-w-[8vw] max-w-[8vw] whitespace-nowrap overflow-hidden text-ellipsis px-4 py-2 font-semibold text-center text-gray-500 cursor-zoom-in"
-                                            onClick={() => handleShowImg(`http://localhost:3000${item.urlImagen}`)}>
+                                            onClick={() => handleShowImg(`http://localhost:3002${item.urlImagen}`)}>
                                             <div className="flex flex-col content-center items-center ">
-                                                <img src={`http://localhost:3000${item.urlImagen}`} alt="Imagen" style={{ width: '50px' }} />
+                                                <img src={`http://localhost:3002${item.urlImagen}`} alt="Imagen" style={{ width: '50px' }} />
                                             </div>
                                         </td>
                                         <td className="flex flex-col px-4 py-2">
@@ -207,10 +203,10 @@ function BannerTable() {
                             Esta acción puede implicar una perdidad irreversible de dicha información, ¿desea continuar?.
                         </p>
                         <div class="mt-4 flex flex-row flex-wrap gap-2 min-w-full items-center content-center justify-center gap-2">
-                            <button type="button" class="min-w-[25%] rounded-lg bg-green-200 px-4 py-2 text-sm font-medium text-green-600" onClick={() => handleConfirm(true)}>
+                            <button type="button" class="min-w-[25%] rounded-lg bg-green-400 px-4 py-2 text-sm font-medium text-white hover:bg-green-500" onClick={() => handleConfirm(true)}>
                                 Confirmar
                             </button>
-                            <button type="button" class="min-w-[25%] rounded-lg bg-red-200 px-4 py-2 text-sm font-medium text-red-600" onClick={() => handleConfirm(false)}>
+                            <button type="button" class="min-w-[25%] rounded-lg bg-red-400 px-4 py-2 text-sm font-medium text-white hover:bg-red-500" onClick={() => handleConfirm(false)}>
                                 Cancelar
                             </button>
                         </div>

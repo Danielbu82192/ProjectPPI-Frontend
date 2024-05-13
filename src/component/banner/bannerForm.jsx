@@ -36,7 +36,7 @@ function BannerForm({ type, id }) {
                         document.getElementById('fechaFin').value = data.fechaFin;
                         data.estado === 1 ? setVisible(true) && setOculto(false) : setOculto(true) && setVisible(false);
                         const extension = data.urlImagen.split('.').pop();
-                        const imageUrl = `http://localhost:3000${data.urlImagen}`;
+                        const imageUrl = `http://localhost:3002${data.urlImagen}`;
                         const imageBlob = await fetch(imageUrl).then(res => res.blob());
                         const file = new File([imageBlob], `${data.urlImagen.split('/').pop(2)}`, { type: `image/${extension}` });
                         const fileList = new DataTransfer();
@@ -55,7 +55,7 @@ function BannerForm({ type, id }) {
                                 setBanner(false);
                             }
                         };
-                        document.getElementById('preview').src = data.urlImagen;
+                        document.getElementById('preview').src = `http://localhost:3002${data.urlImagen}`;
                         document.getElementById('preview').style.display = 'block';
                     } else {
                         setRedirecting(true);
@@ -110,8 +110,8 @@ function BannerForm({ type, id }) {
     }, [showSuccess]);
 
 
-    if (type === 1) {
-        useEffect(() => {
+    useEffect(() => {
+        if (type === 1) {
             document.getElementById('titulo').value = '';
             document.getElementById('contenido').value = '';
             document.getElementById('fechaInicio').value = '';
@@ -121,8 +121,8 @@ function BannerForm({ type, id }) {
             document.getElementById('noticia').value = '';
             document.getElementById('visible').value = '';
             document.getElementById('oculto').value = '';
-        }, []);
-    };
+        };
+    }, []);
 
     const handleTipoBannerChange = (e) => {
         const file = document.getElementById('file').files[0];
