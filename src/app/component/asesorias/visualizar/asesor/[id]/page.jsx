@@ -5,10 +5,11 @@ import Mostrar from '@/component/asesorias/mostrar/mostrarAs'
 import { format } from 'date-fns';
 import { useRouter } from "next/navigation";
 import { data } from 'autoprefixer';
+import CryptoJS from 'crypto-js';
 
 function page({ params }) {
 
-    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/05/2024"));
+    const [fechaPruebas, setFechaPruebas] = useState(new Date());
 
     const [cita, setCita] = useState([]);
     const [semanaConst, setSemanaConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
@@ -18,7 +19,11 @@ function page({ params }) {
     const [grupoTrue, setGrupoTrue] = useState(false);
     const [selectEstado, setSelectEstado] = useState(1);
     const [citaEstado, setCitaEstado] = useState([]);
+    const [motivo, setMotivo] = useState("");
+    const [observacionActual, setObservacionActual] = useState("");
+    const [observacion, setObservacion] = useState([]);
     const [tipoCita, setTipoCita] = useState([]);
+    const [asesor, setAsesor] = useState([]);
     const [showModificar, setShowModificar] = useState(true)
     const [dia, setDia] = useState()
     const [numeroDia, setNumeroDia] = useState()
@@ -36,6 +41,7 @@ function page({ params }) {
     const [numeroDiaLunes, setNumeroDiaLunes] = useState(null);
     const [salon, setSalon] = useState('');
     const [idEquipo, setIdEquipo] = useState('');
+    const [numSemanaAux, setNumSemanaAux] = useState('');
     const [listEquipos, setListEquipos] = useState([]);
     const [estudiantesEquipo, setEstudiantesEquipo] = useState([]);
     const [showCorrecto, setShowCorrecto] = useState(false);
@@ -45,6 +51,7 @@ function page({ params }) {
     const [horaCancelar, setHoraCancelar] = useState(0);
     const [minCancelar, setMinCancelar] = useState(-1);
     const [diaCancelar, setDiaCancelar] = useState(0);
+    const [condicionCancelar, setCondicionCancelar] = useState(false);
     const router = useRouter();
     const calcularNumeroDiaLunes = (fecha) => {
         const diaSemana = fecha.getDay();
@@ -67,10 +74,19 @@ function page({ params }) {
                 const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${params.id}`);
                 const data = await response.json();
                 setCita(data);
+                setObservacionActual(data.observacionCita)
                 setCitaEstado(data.estadoCita)
+                const fechaCita = new Date(data.fecha)
+                const fechaACtual = new Date(fechaPruebas)
+                if (fechaACtual.getDate() == fechaCita.getDate()) {
+                    if (((fechaACtual.getHours() * 60 + fechaACtual.getMinutes()) - ((fechaCita.getHours() + 2) * 60 + fechaCita.getMinutes())) < 0) {
+                        setCondicionCancelar(true)
+                    }
+                }
                 setNumeroDiaLunes(calcularNumeroDiaLunes(new Date(data.fecha)) + fechaPruebas.getDay())
                 setDia(new Date(data.fecha).getDay());
-                setSemanaCancelar([semanaConst.slice(fechaPruebas.getDay() - 6), semanaConst]);
+                setSemanaCancelar([semanaConst.slice(fechaCita.getDay() - 6), semanaConst]);
+                setNumSemanaAux(fechaCita.getDate())
                 setSemanaConst(semanaConst.slice(fechaPruebas.getDay() - 7))
                 setSelectEstado(data.estadoCita.id)
                 setNumeroDia(new Date(data.fecha).getDate())
@@ -120,12 +136,30 @@ function page({ params }) {
             }
         };
         fetchData();
+
+
     }, [params.id, setCita]);
+
     const verAsesoria = async (id) => {
         const response = await fetch('http://localhost:3002/seguimiento-ppi/Cita/' + id);
         const data = await response.json();
         router.push('/seguimientos/visualizar/' + data.id);
     }
+
+    useEffect(() => {
+        const traerObservacion = async () => {
+
+            const response = await fetch('http://localhost:3002/observacion-cita');
+            const data = await response.json();
+            setObservacion(data)
+            const usuarioNest = localStorage.getItem('U2FsdGVkX1');
+            const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
+            const NestOriginal = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+            setAsesor(NestOriginal)
+        }
+        traerObservacion();
+    }, [])
+
     useEffect(() => {
         if (showAlert) {
             const timer = setTimeout(() => {
@@ -186,7 +220,6 @@ function page({ params }) {
                 const response = await fetch(`http://localhost:3002/equipo-usuarios/Estudiantes`);
                 const data = await response.json();
                 if (response.ok) {
-                    console.log(data[equipo.codigoEquipo])
                     setEstudiantesEquipo(data[equipo.codigoEquipo])
                 }
             } catch (error) {
@@ -250,7 +283,7 @@ function page({ params }) {
     }
     const cancelarCita = async (id) => {
         if (diaCancelar != 0 && horaCancelar != 0 && minCancelar != -1) {
-            const FechaCancelar = fechaPruebas;
+            const FechaCancelar = new Date(fechaPruebas);
             FechaCancelar.setDate(diaCancelar);
             const Fecha = format(FechaCancelar, 'yyyy-MM-dd');
             const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/BuscarFechaHoraUsuario/${Fecha}/${horaCancelar}:${minCancelar}/1`);
@@ -259,8 +292,8 @@ function page({ params }) {
                 setShowOcupado(true)
                 return
             }
-            const FechaActual = fechaPruebas;
-            const FechaSabado = fechaPruebas;
+            const FechaActual = new Date(fechaPruebas);
+            const FechaSabado = new Date(fechaPruebas);;
             FechaSabado.setDate(FechaActual.getDate() - (FechaActual.getDay() - 7))
             let datosCrear = {}
             let EstadoCita = 0
@@ -286,7 +319,7 @@ function page({ params }) {
                     "modificaciones": "",
                     "usuariocitaequipo": 1,
                     "tipoCita": tipoCita.id,
-                    "equipocita": equipo.id
+                    "equipocita": equipo.id,
                 }
             }
             const requestOptions = {
@@ -332,7 +365,8 @@ function page({ params }) {
                     }
                     const dataCita = {
                         "estadoCita": 5,
-                        "modificaciones": citaNueva[0].id
+                        "modificaciones": citaNueva[0].id,
+                        "observacionCita": motivo
                     };
                     const requestOptionsCita = {
                         method: 'PATCH',
@@ -354,7 +388,7 @@ function page({ params }) {
                             let auxBan = false
                             if (EstadoCita == 2) {
                                 const datos = {
-                                    "citas": citaNueva[0].id
+                                    "citas": citaNueva[0].id.toString()
                                 }
                                 const requestOptions = {
                                     method: 'PATCH',
@@ -365,7 +399,6 @@ function page({ params }) {
                                 if (response.ok)
                                     auxBan = true
                             } else {
-                                alert()
                                 const requestOptions = {
                                     method: 'DELETE',
                                     headers: { 'Content-Type': 'application/json' }
@@ -375,8 +408,7 @@ function page({ params }) {
                                     auxBan = true
                             }
                             if (auxBan) {
-                                //falta el id
-                                const mensaje = "El asesor 1 ha cancelado una cita"
+                                const mensaje = `El asesor ${asesor.nombre} ha cancelado una cita`
                                 const datos = {
                                     "mensaje": mensaje,
                                     "tipo": 2,
@@ -390,6 +422,7 @@ function page({ params }) {
                                 };
                                 const response = await fetch('http://localhost:3002/notificaciones', requestOptions);
                                 if (response.ok) {
+                                    alert();
                                     setShowCorrecto(true);
                                     setTimeout(() => {
                                         router.back();
@@ -637,6 +670,18 @@ function page({ params }) {
                                     ))}
                                 </div>
                             </div>
+                            {observacionActual != "" ? (
+                                <div className="text-center mt-5">
+                                    <div>
+                                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Observación:</h1>
+                                    </div>
+                                    <div className='lg:mr-8'>
+                                        <span className=" text-2xl text-gray-500 sm:mt-2 ml-2 sm:ml-4 font-semibold px-2 sm:px-3">
+                                            {observacionActual}
+                                        </span>
+                                    </div>
+                                </div>) : (null)}
+
                         </div>
                         <div >
                             {citaEstado.id == 5 ? (
@@ -662,9 +707,9 @@ function page({ params }) {
                                                         {index === 1 && <option disabled>--------- Siguiente semana ---------</option>}
                                                         {parte.map((dia, i) => (
                                                             index === 0 ? (
-                                                                <option key={numeroDiaLunes + i + 1} value={numeroDiaLunes + i + 1}>{dia} {numeroDiaLunes + i + 1}</option>
+                                                                <option key={numSemanaAux + i + 1} value={numSemanaAux + i + 1}>{dia} {numSemanaAux + i + 1}</option>
                                                             ) : (
-                                                                <option key={numeroDiaLunes + i + (8 - fechaPruebas.getDay())} value={numeroDiaLunes + i + (8 - fechaPruebas.getDay())}>{dia} {numeroDiaLunes + i + (8 - fechaPruebas.getDay())}</option>
+                                                                <option key={numSemanaAux + i + 3} value={numSemanaAux + i + 3}>{dia} {numSemanaAux + i + 3}</option>
                                                             )
                                                         ))}
                                                     </>
@@ -695,17 +740,39 @@ function page({ params }) {
 
                                         </div>
                                     </div>
+                                    <div className="mt-5 mx-4 sm:mx-10 grid grid-cols-2">
+                                        <div className='text-center lg:text-right'>
+                                            <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Motivo:</h1>
+                                        </div>
+                                        <div className='flex'>
+
+                                            <select value={motivo} onChange={(e) => { setMotivo(e.target.value); }} id="motivo" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
+                                                {observacion.map((item) => (
+                                                    <option key={item.id} value={item.id}>{item.nombre}</option>
+                                                ))}
+                                            </select>
+
+
+                                        </div>
+                                    </div>
                                     <div className="justify-center  ">
                                         <button onClick={() => { cancelarCita(cita.id); }} class="text-white xl:mt-4 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
                                         <button onClick={() => { setCancelar(false); }} class="text-white xl:mt-10 h-14 py-2 px-4 w-full rounded bg-emerald-400 hover:bg-emerald-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Atras</button>
 
                                     </div>
                                 </div>) : (
-                                citaEstado.id == 2 || citaEstado.id == 6 || citaEstado.id == 7 ? (<div className="justify-center">
-                                    <button onClick={() => { verBitacora(equipo.id); }} class="text-white  h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver Bitácora</button>
-                                    <button onClick={() => { setCancelar(true); /*cancelarCita(cita.id)*/ }} class="text-white lg:mt-8 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
+                                citaEstado.id == 2 || citaEstado.id == 6 || citaEstado.id == 7 ? (
+                                    citaEstado.id != 6 ? (<div className="justify-center">
+                                        <button onClick={() => { verBitacora(equipo.id); }} class="text-white  h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver Bitácora</button>
+                                        {condicionCancelar ? (
+                                            <button onClick={() => { setCancelar(true); /*cancelarCita(cita.id)*/ }} class="text-white lg:mt-8 h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
+                                        ) : (null)}
+                                    </div>) : (<div className="justify-center">
+                                        <button onClick={() => { verBitacora(equipo.id); }} class="text-white  h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver Bitácora</button>
+                                    </div>)
 
-                                </div>) : (
+
+                                ) : (
                                     citaEstado.id == 3 ? (
                                         <button onClick={() => { verAsesoria(cita.id) }} class="text-white h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver asesoría</button>
 
