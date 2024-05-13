@@ -22,6 +22,8 @@ const ExcelUploader = ({ onUpload }) => {
         const nombreIndex = headers.indexOf('NOMBRES');
         const correoIndex = headers.indexOf('CORREOS');
         const codigo = sheet.B2.v;
+        const documentoProfesor = sheet.B1.v;
+        const grupoAsignatura = sheet.B3.v;
 
         const extractedData = jsonData.slice(4).map(row => ({
           documento: row[docIndex],
@@ -29,7 +31,7 @@ const ExcelUploader = ({ onUpload }) => {
           correo: row[correoIndex]
         }));
 
-        const fileData = { codigo, datos: extractedData };
+        const fileData = { codigo, documentoProfesor, grupoAsignatura, datos: extractedData };
 
         // Guardar los datos extraídos en el estado
         setUploadedFiles(prevFiles => [...prevFiles, fileData]);

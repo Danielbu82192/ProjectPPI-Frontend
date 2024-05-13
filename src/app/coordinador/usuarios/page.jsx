@@ -37,24 +37,6 @@ function Page() {
             <div className='pt-8 pb-8 w-full'>
                 <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
                     <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Estudiantes</h1>
-                    </div>
-                </div>
-                <div className='p-10'>
-                    <div className="mt-5">
-                        <p>Antes de continuar, te recomendamos tener a la mano todos los archivos Excel de cada asignatura previamente descargados del Portal Académico, posteriormente puedes cargar tus archivos de manera simultánea haciendo clic en el botón a continuación:</p><br></br>
-                        <ExcelUploader onUpload={() => setMostrarBoton(true)} />
-                    </div>
-                    {mostrarBoton && (
-                        <div className="mt-5">
-                            <button onClick={handleCargarUsuarios} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                Cargar Estudiantes
-                            </button>
-                        </div>
-                    )}
-                </div>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
-                    <div>
                         <h1 className='text-4xl font-bold text-gray-600'>Docentes y Asesores</h1>
                     </div>
                 </div>
@@ -68,6 +50,24 @@ function Page() {
                         <div className="mt-5">
                             <button onClick={handleCargarDocentes} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                                 Cargar Docentes y Asesores
+                            </button>
+                        </div>
+                    )}
+                </div>
+                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
+                    <div>
+                        <h1 className='text-4xl font-bold text-gray-600'>Estudiantes</h1>
+                    </div>
+                </div>
+                <div className='p-10'>
+                    <div className="mt-5">
+                        <p>Antes de continuar, te recomendamos tener a la mano todos los archivos Excel de cada asignatura previamente descargados del Portal Académico, posteriormente puedes cargar tus archivos de manera simultánea haciendo clic en el botón a continuación:</p><br></br>
+                        <ExcelUploader onUpload={() => setMostrarBoton(true)} />
+                    </div>
+                    {mostrarBoton && (
+                        <div className="mt-5">
+                            <button onClick={handleCargarUsuarios} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Cargar Estudiantes
                             </button>
                         </div>
                     )}
