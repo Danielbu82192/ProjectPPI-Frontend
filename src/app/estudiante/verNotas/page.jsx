@@ -18,7 +18,7 @@ function Page() {
     useEffect(() => {
         const fetchEquipoUsuarios = async () => {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/57660');
+                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/57661');
                 if (response.ok) {
                     const data = await response.json();
                     setEquipoUsuarios(data);

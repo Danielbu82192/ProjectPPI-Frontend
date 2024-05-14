@@ -31,7 +31,7 @@ function Page() {
                     const data2 = await response2.json();
                     setStudentSemester(data1);
                     setEquipos(data2);
-                    console.log("Equipos:", data2)
+                    //console.log("Equipos:", data2)
                 } else {
                     console.error('Error al obtener datos');
                 }
@@ -143,7 +143,7 @@ function Page() {
                 nuevoCodigoEquipo = ultimoCodigoEquipoLocal + 1;
             }
 
-            console.log("Estudiantes seleccionados:", estudiantesSeleccionados);
+            //console.log("Estudiantes seleccionados:", estudiantesSeleccionados);
 
             const nuevosEquipos = estudiantesSeleccionados.map((estudiante) => ({
                 Usuario_ID: estudiante.Usuario_ID,
@@ -153,7 +153,7 @@ function Page() {
                 Grupo_Codigo: parseInt(selectedGrupo)
             }));
 
-            console.log("Nuevos equipos:", nuevosEquipos); // Verifiquemos los nuevos equipos antes de agregarlos
+            //console.log("Nuevos equipos:", nuevosEquipos); // Verifiquemos los nuevos equipos antes de agregarlos
 
             setEquipos([...equipos, ...nuevosEquipos]);
 
@@ -171,7 +171,7 @@ function Page() {
                 }
             })
                 .then(response => {
-                    console.log('Respuesta del servidor:', response.data);
+                    //console.log('Respuesta del servidor:', response.data);
                     // Si necesitas hacer algo con la respuesta del servidor, puedes hacerlo aquí
                 })
                 .catch(error => {
@@ -194,7 +194,7 @@ function Page() {
             setNuevoEquipoEstudiantes([]);
 
             // Aquí puedes realizar alguna acción con el nuevo código de equipo, por ejemplo, agregarlo a la lista de equipos
-            console.log("Nuevo código de equipo:", nuevoCodigoEquipo);
+            //console.log("Nuevo código de equipo:", nuevoCodigoEquipo);
         } catch (error) {
             console.error('Error al crear equipo:', error);
         }
@@ -260,7 +260,7 @@ function Page() {
                     {errorMensaje && <p>{errorMensaje}</p>}
                     <br />
                     <div className="bg-gray-100 p-4">
-                        <h2 className="text-lg font-medium text-gray-700 mb-4">Agrupar estudiantes</h2>
+                        <h2 className="text-lg font-medium text-gray-700 mb-4">Estudiantes sin Equipo</h2>
                         <hr />
                         <ul className="m-4 flex flex-col gap-2">
                             {estudiantesSinEquipo.map((estudiante, index) => (
@@ -279,7 +279,7 @@ function Page() {
                         {mostrarBoton && estudiantesSeleccionados.length > 0 && (
                             <div className="text-center">
                                 <button
-                                    className="inline-block w-auto border border-gray-300 rounded-md py-2 px-3 bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:border-blue-700"
+                                    className="inline-block w-auto border border-gray-300 rounded-md py-2 px-3 bg-green-500 text-white font-semibold hover:bg-green-600 focus:outline-none focus:border-green-700"
                                     onClick={handleCrearEquipo}
                                 >
                                     Crear Equipo

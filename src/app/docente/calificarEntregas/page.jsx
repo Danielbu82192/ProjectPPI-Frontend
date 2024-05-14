@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import './page.css';
 import CountdownTimer from '@/app/utils/timer';
 
 function Page() {
@@ -127,6 +128,9 @@ function Page() {
                 </div>
                 <div className='p-10'>
                     <div>
+                        <p>Esta es la ventana de Calificar Entregas. Aquí podrás revisar y evaluar el trabajo que han entregado los equipos de tus grupos en todas las asignaturas que enseñas. Si ves una tabla vacía para algún grupo, significa que ninguno de los equipos ha entregado nada todavía. Recuerda calificar grupo por grupo para evitar inconsistencias.</p>
+                        <p>Una vez hagas click en el botón de Guardar Notas, deberás esperar a que salga la alerta de confirmación de guardado.</p>
+                        <br />
                         <label className="text-lg font-medium text-gray-700">Seleccione una asignatura:</label>
                     </div>
                     <br />
@@ -158,8 +162,9 @@ function Page() {
                         </div>
                     )}
                     <br />
+
                     {equipos.size > 0 && (
-                        <div>
+                        <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -196,103 +201,154 @@ function Page() {
 
                                                 // Verificar si hay una entrega asociada al equipo actual
                                                 const entregaEquipo = entregasMap.get(equipo);
-                                                const tieneEntrega = entregaEquipo && entregaEquipo.find(entregaEquipo => entregaEquipo.Tipo_Entrega_Descripcion === entrega.Tipo_Entrega_Descripcion);
+                                                const tieneEntrega = entregaEquipo && entregaEquipo.find(entregaEquipo => entregaEquipo.Tipo_Entrega_Descripcion === entrega.Tipo_Entrega_Descripcion && entregaEquipo.Entrega_Equipo_PPI_ID !== null);
 
                                                 // Si hay entrega, obtener la ubicación del adjunto
                                                 const ubicacionAdjunto = tieneEntrega ? entregaEquipo.Ubicacion_Entrega : '';
 
-                                                return (
-                                                    <tr key={`${index}-${entregaIndex}`} className={entregaIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{equipo}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{entrega.Tipo_Entrega_Descripcion}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{entrega.Porcentaje_Entrega}%</td>
-                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center ${plazoPasado ? 'text-red-500' : ''}`}>
-                                                            {fechaFormateada}
-                                                            {plazoPasado ? null : <CountdownTimer deadline={fechaPlazo} />}
-                                                        </td>
+                                                // Si la entrega ha sido cargada, mostrarla en la tabla
+                                                if (tieneEntrega) {
+                                                    return (
+                                                        <tr key={`${index}-${entregaIndex}`} className={entregaIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{equipo}</td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{entrega.Tipo_Entrega_Descripcion}</td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{entrega.Porcentaje_Entrega}%</td>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center ${plazoPasado ? 'text-red-500' : ''}`}>
+                                                                {fechaFormateada}
+                                                                {plazoPasado ? null : <CountdownTimer deadline={fechaPlazo} />}
+                                                            </td>
 
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center flex justify-center items-center">
-                                                            {/* Mostrar botón con logo SVG si hay entrega */}
-                                                            {tieneEntrega && (
-                                                                <svg
-                                                                    xmlns="http://www.w3.org/2000/svg"
-                                                                    viewBox="0 0 24 24"
-                                                                    width="24"
-                                                                    height="24"
-                                                                    color="#000000"
-                                                                    fill="none"
-                                                                    className="cursor-pointer"
-                                                                    onClick={async () => {
-                                                                        try {
-                                                                            const response = await fetch(`https://td-g-production.up.railway.app/entrega-equipo-ppi/GetPPIEntregaByID/${equipo}`);
-                                                                            if (response.ok) {
-                                                                                const data = await response.json();
-                                                                                const entregaEquipo = data.find(entrega => entrega.Codigo_Equipo === equipo);
-                                                                                if (entregaEquipo && entregaEquipo.Ubicacion_Entrega !== null) {
-                                                                                    window.open(entregaEquipo.Ubicacion_Entrega, '_blank');
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center flex justify-center items-center">
+                                                                {/* Mostrar botón con logo SVG si hay entrega */}
+                                                                {tieneEntrega && (
+                                                                    <svg
+                                                                        xmlns="http://www.w3.org/2000/svg"
+                                                                        viewBox="0 0 24 24"
+                                                                        width="24"
+                                                                        height="24"
+                                                                        color="#000000"
+                                                                        fill="none"
+                                                                        className="cursor-pointer"
+                                                                        onClick={async () => {
+                                                                            try {
+                                                                                const response = await fetch(`https://td-g-production.up.railway.app/entrega-equipo-ppi/GetPPIEntregaByID/${equipo}`);
+                                                                                if (response.ok) {
+                                                                                    const data = await response.json();
+                                                                                    const entregaEquipo = data.find(entrega => entrega.Codigo_Equipo === equipo);
+                                                                                    if (entregaEquipo && entregaEquipo.Ubicacion_Entrega !== null) {
+                                                                                        window.open(entregaEquipo.Ubicacion_Entrega, '_blank');
+                                                                                    } else {
+                                                                                        alert("Esta entrega no tiene un archivo adjunto.");
+                                                                                    }
                                                                                 } else {
-                                                                                    alert("Esta entrega no tiene un archivo adjunto.");
+                                                                                    console.error('Error al obtener las entregas para el equipo', equipo);
                                                                                 }
-                                                                            } else {
-                                                                                console.error('Error al obtener las entregas para el equipo', equipo);
+                                                                            } catch (error) {
+                                                                                console.error('Error al obtener las entregas para el equipo', equipo, error);
                                                                             }
-                                                                        } catch (error) {
-                                                                            console.error('Error al obtener las entregas para el equipo', equipo, error);
+                                                                        }}
+                                                                    >
+                                                                        <path d="M17.4776 9.01106C17.485 9.01102 17.4925 9.01101 17.5 9.01101C19.9853 9.01101 22 11.0294 22 13.5193C22 15.8398 20.25 17.7508 18 18M17.4776 9.01106C17.4924 8.84606 17.5 8.67896 17.5 8.51009C17.5 5.46695 15.0376 3 12 3C9.12324 3 6.76233 5.21267 6.52042 8.03192M17.4776 9.01106C17.3753 10.1476 16.9286 11.1846 16.2428 12.0165M6.52042 8.03192C3.98398 8.27373 2 10.4139 2 13.0183C2 15.4417 3.71776 17.4632 6 17.9273M6.52042 8.03192C6.67826 8.01687 6.83823 8.00917 7 8.00917C8.12582 8.00917 9.16474 8.38194 10.0005 9.01101" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                        <path d="M12 21L12 13M12 21C11.2998 21 9.99153 19.0057 9.5 18.5M12 21C12.7002 21 14.0085 19.0057 14.5 18.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                    </svg>
+                                                                )}
+                                                            </td>
+
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                                <input
+                                                                    type="text"
+                                                                    className={`border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:border-indigo-500 ${plazoPasado ? 'cursor-not-allowed' : ''}`}
+                                                                    size="4"
+                                                                    pattern="[0-5](,[0-9])?$"
+                                                                    title="Debe ser un número entre 0 y 5, opcionalmente seguido de un decimal separado por coma."
+                                                                    onKeyPress={(event) => {
+                                                                        // Evita que se ingresen caracteres que no sean números, comas o el punto de decimal
+                                                                        const allowedCharacters = /[0-9,]/;
+                                                                        const key = event.key;
+                                                                        if (!allowedCharacters.test(key)) {
+                                                                            event.preventDefault();
                                                                         }
                                                                     }}
-                                                                >
-                                                                    <path d="M17.4776 9.01106C17.485 9.01102 17.4925 9.01101 17.5 9.01101C19.9853 9.01101 22 11.0294 22 13.5193C22 15.8398 20.25 17.7508 18 18M17.4776 9.01106C17.4924 8.84606 17.5 8.67896 17.5 8.51009C17.5 5.46695 15.0376 3 12 3C9.12324 3 6.76233 5.21267 6.52042 8.03192M17.4776 9.01106C17.3753 10.1476 16.9286 11.1846 16.2428 12.0165M6.52042 8.03192C3.98398 8.27373 2 10.4139 2 13.0183C2 15.4417 3.71776 17.4632 6 17.9273M6.52042 8.03192C6.67826 8.01687 6.83823 8.00917 7 8.00917C8.12582 8.00917 9.16474 8.38194 10.0005 9.01101" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    <path d="M12 21L12 13M12 21C11.2998 21 9.99153 19.0057 9.5 18.5M12 21C12.7002 21 14.0085 19.0057 14.5 18.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                </svg>
-                                                            )}
-                                                        </td>
+                                                                    // Desactivar la casilla si el plazo ha pasado
+                                                                    disabled={plazoPasado}
+                                                                    // Establecer el valor predeterminado de la casilla
+                                                                    value={calificaciones.has(`${equipo}-${entrega.Tipo_Entrega_ID}`) ? calificaciones.get(`${equipo}-${entrega.Tipo_Entrega_ID}`).replace('.', ',') : ''}
+                                                                    onChange={(event) => {
+                                                                        // Actualizar la calificación en el estado mientras se edita
+                                                                        const newValue = event.target.value.replace(',', '.');
+                                                                        setCalificaciones(prevCalificaciones => {
+                                                                            const newCalificaciones = new Map(prevCalificaciones);
+                                                                            newCalificaciones.set(`${equipo}-${entrega.Tipo_Entrega_ID}`, newValue);
+                                                                            return newCalificaciones;
+                                                                        });
+                                                                    }}
+                                                                />
 
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                            <input
-                                                                type="text"
-                                                                className={`border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:border-indigo-500 ${plazoPasado ? 'cursor-not-allowed' : ''}`}
-                                                                size="4"
-                                                                pattern="[0-5](,[0-9])?$"
-                                                                title="Debe ser un número entre 0 y 5, opcionalmente seguido de un decimal separado por coma."
-                                                                onKeyPress={(event) => {
-                                                                    // Evita que se ingresen caracteres que no sean números, comas o el punto de decimal
-                                                                    const allowedCharacters = /[0-9,]/;
-                                                                    const key = event.key;
-                                                                    if (!allowedCharacters.test(key)) {
-                                                                        event.preventDefault();
-                                                                    }
-                                                                }}
-                                                                // Desactivar la casilla si el plazo ha pasado
-                                                                disabled={plazoPasado}
-                                                                // Establecer el valor predeterminado de la casilla
-                                                                value={calificaciones.has(`${equipo}-${entrega.Tipo_Entrega_ID}`) ? calificaciones.get(`${equipo}-${entrega.Tipo_Entrega_ID}`).replace('.', ',') : ''}
-                                                                onChange={(event) => {
-                                                                    // Actualizar la calificación en el estado mientras se edita
-                                                                    const newValue = event.target.value.replace(',', '.');
-                                                                    setCalificaciones(prevCalificaciones => {
-                                                                        const newCalificaciones = new Map(prevCalificaciones);
-                                                                        newCalificaciones.set(`${equipo}-${entrega.Tipo_Entrega_ID}`, newValue);
-                                                                        return newCalificaciones;
-                                                                    });
-                                                                }}
-                                                            />
-
-                                                        </td>
-
-                                                    </tr>
-                                                );
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+                                                return null; // No renderizar si la entrega no ha sido cargada
                                             })}
                                         </React.Fragment>
                                     ))}
 
-
                                 </tbody>
                             </table>
+                            <br />
+                            {selectedAsignatura && selectedGrupo && (
+                                <div>
+                                    <button
+                                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => {
+                                            const dataToSend = [];
+
+                                            [...equipos].forEach(equipo => {
+                                                ppiEntregaSOL.forEach(entrega => {
+                                                    const entregaEquipo = entregasMap.get(equipo);
+                                                    if (entregaEquipo) {
+                                                        const entregaEnEquipo = entregaEquipo.find(entregaEquipo => entregaEquipo.Tipo_Entrega_Descripcion === entrega.Tipo_Entrega_Descripcion && entregaEquipo.Entrega_Equipo_PPI_ID !== null);
+                                                        if (entregaEnEquipo) {
+                                                            const calificacion = calificaciones.get(`${equipo}-${entrega.Tipo_Entrega_ID}`);
+                                                            dataToSend.push({
+                                                                Entrega_Equipo_PPI_ID: entregaEnEquipo.Entrega_Equipo_PPI_ID,
+                                                                Calificacion: calificacion !== '' ? parseFloat(calificacion) : null
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            });
+
+                                            fetch('https://td-g-production.up.railway.app/entrega-equipo-ppi/updateScores', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify(dataToSend)
+                                            })
+                                                .then(response => {
+                                                    if (response.ok) {
+                                                        alert('Calificaciones actualizadas correctamente.');
+                                                        window.location.reload();
+                                                    } else {
+                                                        console.error('Error al enviar los datos al backend:', response.statusText);
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error al enviar los datos al backend:', error);
+                                                });
+                                        }}
+                                    >
+                                        Guardar Notas
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
+
                     {/* Mensaje de "No hay equipos" si no se han seleccionado asignatura y grupo */}
                     {selectedAsignatura && selectedGrupo && equipos.size === 0 && (
-                        <div>No hay equipos</div>
+                        <div>Este grupo no tiene equipos creados hasta el momento.</div>
                     )}
 
                 </div>
