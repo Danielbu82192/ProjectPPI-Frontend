@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 function Page() {
     const [asignaturas, setAsignaturas] = useState([]);
@@ -17,6 +18,8 @@ function Page() {
     const [nuevoEquipoEstudiantes, setNuevoEquipoEstudiantes] = useState([]); // Estado para almacenar los estudiantes seleccionados para el nuevo equipo
     const [ultimoCodigoEquipoLocal, setUltimoCodigoEquipoLocal] = useState(0);
     const [ultimaAsignaturaSeleccionada, setUltimaAsignaturaSeleccionada] = useState('');
+    const [equiposAgrupados, setEquiposAgrupados] = useState({}); // Estado para almacenar los equipos agrupados por Codigo_Equipo
+    const [estudiantesSeleccionados, setEstudiantesSeleccionados] = useState([]); // Estado para almacenar los estudiantes seleccionados en el popup
 
     useEffect(() => {
         async function fetchData() {
@@ -28,6 +31,7 @@ function Page() {
                     const data2 = await response2.json();
                     setStudentSemester(data1);
                     setEquipos(data2);
+                    console.log("Equipos:", data2)
                 } else {
                     console.error('Error al obtener datos');
                 }
@@ -96,15 +100,24 @@ function Page() {
                 !estudiantesEnEquipos.includes(usuario.Usuario_Nombre)
             );
 
+            // Agrupar equipos por Codigo_Equipo
+            const equiposAgrupados = equipos.filter(equipo =>
+                equipo.Asignatura_Nombre === selectedAsignatura && equipo.Grupo_Codigo === parseInt(selectedGrupo)
+            ).reduce((groups, equipo) => {
+                if (!groups[equipo.Codigo_Equipo]) {
+                    groups[equipo.Codigo_Equipo] = [];
+                }
+                groups[equipo.Codigo_Equipo].push(equipo);
+                return groups;
+            }, {});
+
             setEstudiantesSinEquipo(estudiantesSinEquipo);
             setMostrarBoton(estudiantesSinEquipo.length > 0);
-
-            // Obtener el último código de equipo y almacenarlo en el estado
-            const ultimoCodigo = Math.max(...equipos.map(equipo => parseInt(equipo.Codigo_Equipo.toString().slice(1))));
-            setUltimoCodigoEquipo(ultimoCodigo);
+            setEquiposAgrupados(equiposAgrupados); // Nuevo estado para los equipos agrupados
         } else {
             setEstudiantesSinEquipo([]);
             setMostrarBoton(false);
+            setEquiposAgrupados({});
         }
     }, [selectedAsignatura, selectedGrupo, usuarios, equipos]);
 
@@ -130,17 +143,55 @@ function Page() {
                 nuevoCodigoEquipo = ultimoCodigoEquipoLocal + 1;
             }
 
-            const nuevoEquipo = {
+            console.log("Estudiantes seleccionados:", estudiantesSeleccionados);
+
+            const nuevosEquipos = estudiantesSeleccionados.map((estudiante) => ({
+                Usuario_ID: estudiante.Usuario_ID,
                 Codigo_Equipo: nuevoCodigoEquipo,
-                Usuario_Nombre: "Equipo " + nuevoCodigoEquipo,
+                Usuario_Nombre: estudiante.Usuario_Nombre,
                 Asignatura_Nombre: selectedAsignatura,
                 Grupo_Codigo: parseInt(selectedGrupo)
-            };
+            }));
 
-            setEquipos([...equipos, nuevoEquipo]);
+            console.log("Nuevos equipos:", nuevosEquipos); // Verifiquemos los nuevos equipos antes de agregarlos
+
+            setEquipos([...equipos, ...nuevosEquipos]);
+
+            // Mapear nuevosEquipos y formatear los datos como se espera para enviar al servidor
+            // Convertir objetos a formato requerido
+            const datosParaEnviar = nuevosEquipos.map(equipo => ({
+                Codigo_Equipo: equipo.Codigo_Equipo,
+                Usuario_ID: [equipo.Usuario_ID] // Convertir a un array de un solo elemento
+            }));
+
+            // Realizar la solicitud POST al endpoint con los datos formateados
+            axios.post('https://td-g-production.up.railway.app/equipo-usuarios/CreateGroups', datosParaEnviar, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => {
+                    console.log('Respuesta del servidor:', response.data);
+                    // Si necesitas hacer algo con la respuesta del servidor, puedes hacerlo aquí
+                })
+                .catch(error => {
+                    console.error('Error al enviar datos al servidor:', error);
+                });
+
+            // Limpiar la lista de estudiantes seleccionados
+            setEstudiantesSeleccionados([]);
+
+            // Actualizar los equipos con el nuevo equipo
             setUltimoCodigoEquipoLocal(nuevoCodigoEquipo);
-            // Actualizar los estudiantes sin equipo (en caso de que se hayan seleccionado estudiantes para el nuevo equipo)
-            setEstudiantesSinEquipo(estudiantesSinEquipo.filter(estudiante => !nuevoEquipoEstudiantes.includes(estudiante)));
+
+            // Filtrar los estudiantes sin equipo para excluir los seleccionados
+            const nuevosEstudiantesSinEquipo = estudiantesSinEquipo.filter(estudiante => !nuevoEquipoEstudiantes.includes(estudiante));
+
+            // Actualizar los estudiantes sin equipo con la nueva lista filtrada
+            setEstudiantesSinEquipo(nuevosEstudiantesSinEquipo);
+
+            // Limpiar la lista de estudiantes seleccionados
+            setNuevoEquipoEstudiantes([]);
 
             // Aquí puedes realizar alguna acción con el nuevo código de equipo, por ejemplo, agregarlo a la lista de equipos
             console.log("Nuevo código de equipo:", nuevoCodigoEquipo);
@@ -149,16 +200,20 @@ function Page() {
         }
     };
 
-    const handleSeleccionarEstudiante = (estudiante) => {
-        if (nuevoEquipoEstudiantes.length < 3) {
-            setNuevoEquipoEstudiantes([...nuevoEquipoEstudiantes, estudiante]);
+    const toggleEstudianteSeleccionado = (estudiante) => {
+        // Verificar si el estudiante ya está seleccionado
+        const index = estudiantesSeleccionados.indexOf(estudiante);
+        if (index === -1) {
+            // Si no está seleccionado, agregarlo si el límite de 3 no se ha alcanzado
+            if (estudiantesSeleccionados.length < 3) {
+                setEstudiantesSeleccionados([...estudiantesSeleccionados, estudiante]);
+            }
         } else {
-            alert("Ya has seleccionado tres estudiantes para el nuevo equipo");
+            // Si ya está seleccionado, quitarlo
+            const updatedSelection = [...estudiantesSeleccionados];
+            updatedSelection.splice(index, 1);
+            setEstudiantesSeleccionados(updatedSelection);
         }
-    };
-
-    const handleDeseleccionarEstudiante = (estudiante) => {
-        setNuevoEquipoEstudiantes(nuevoEquipoEstudiantes.filter(e => e !== estudiante));
     };
 
     return (
@@ -203,67 +258,49 @@ function Page() {
                     )}
                     <br />
                     {errorMensaje && <p>{errorMensaje}</p>}
-                    {mostrarBoton && (
-                        <div className="text-center">
-                            <button
-                                className="inline-block w-auto border border-gray-300 rounded-md py-2 px-3 bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:border-blue-700"
-                                onClick={handleCrearEquipo}
-                            >
-                                Crear Equipo
-                            </button><br /><br />
-                        </div>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {equipos
-                            .filter(equipo =>
-                                equipo.Asignatura_Nombre === selectedAsignatura &&
-                                equipo.Grupo_Codigo === parseInt(selectedGrupo)
-                            )
-                            .map((equipo, index) => (
-                                <div key={index} className="border border-gray-300 rounded p-4">
-                                    <h2 className="text-lg font-medium text-gray-700">Equipo {equipo.Codigo_Equipo}</h2>
-                                    <ul>
-                                        {usuarios
-                                            .filter(usuario =>
-                                                usuario.Asignatura_Nombre === selectedAsignatura &&
-                                                usuario.Grupo_Codigo === parseInt(selectedGrupo) &&
-                                                usuario.Usuario_Nombre === equipo.Usuario_Nombre
-                                            )
-                                            .map((usuario, index) => (
-                                                <li key={index}>● {usuario.Usuario_Nombre}</li>
-                                            ))}
-                                    </ul>
-                                </div>
+                    <br />
+                    <div className="bg-gray-100 p-4">
+                        <h2 className="text-lg font-medium text-gray-700 mb-4">Agrupar estudiantes</h2>
+                        <hr />
+                        <ul className="m-4 flex flex-col gap-2">
+                            {estudiantesSinEquipo.map((estudiante, index) => (
+                                <li key={index} className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={estudiantesSeleccionados.includes(estudiante)}
+                                        onChange={() => toggleEstudianteSeleccionado(estudiante)}
+                                        className="form-checkbox h-5 w-5 text-indigo-600"
+                                    />
+                                    <label className="ml-2">{estudiante.Usuario_Nombre}</label>
+                                </li>
                             ))}
+                        </ul>
+                        <br />
+                        {mostrarBoton && estudiantesSeleccionados.length > 0 && (
+                            <div className="text-center">
+                                <button
+                                    className="inline-block w-auto border border-gray-300 rounded-md py-2 px-3 bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:border-blue-700"
+                                    onClick={handleCrearEquipo}
+                                >
+                                    Crear Equipo
+                                </button><br /><br />
+                            </div>
+                        )}
+
                     </div>
-                    {selectedAsignatura && selectedGrupo && estudiantesSinEquipo.length > 0 && (
-                        <>
-                            <br />
-                            <h2 className="text-lg font-medium text-gray-700">Estudiantes sin Equipo</h2>
-                            <ul>
-                                {estudiantesSinEquipo.map((estudiante, index) => (
-                                    <li key={index}>
-                                        {estudiante.Usuario_Nombre}
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
-
-                    {nuevoEquipoEstudiantes.length > 0 && (
-                        <>
-                            <br />
-                            <h2 className="text-lg font-medium text-gray-700">Estudiantes seleccionados para el nuevo equipo</h2>
-                            <ul>
-                                {nuevoEquipoEstudiantes.map((estudiante, index) => (
-                                    <li key={index}>
-                                        {estudiante.Usuario_Nombre}
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
-
+                    <br />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {Object.keys(equiposAgrupados).map((codigoEquipo, index) => (
+                            <div key={index} className="border border-gray-300 rounded p-4">
+                                <h2 className="text-lg font-medium text-gray-700">Equipo {codigoEquipo}</h2>
+                                <ul>
+                                    {equiposAgrupados[codigoEquipo].map((equipo, index) => (
+                                        <li key={index}> - {equipo.Usuario_Nombre}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>
