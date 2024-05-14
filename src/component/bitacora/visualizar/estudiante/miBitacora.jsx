@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { format } from 'date-fns';
 import './css/style.css'
+import { es } from 'date-fns/locale';
 import CryptoJS from 'crypto-js';
 
 function miBitacora() {
@@ -18,10 +19,11 @@ function miBitacora() {
             const usuarioNest = localStorage.getItem('U2FsdGVkX1');
             const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
             const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
-            setUsuario(usuarioN)
-            const response = await fetch(`http://localhost:3002/equipo-usuarios/EstudiantesBitacora/${usuarioN.correo}/${usuarioN.clave}`);
+            setUsuario(usuarioN) 
+            const response = await fetch(`http://localhost:3002/equipo-usuarios/EstudiantesBitacora/${usuarioN.correo}`);
             if (response.ok) {
                 const data = await response.json()
+                console.log(data)
                 setBitacora(data)
 
             }
@@ -32,28 +34,28 @@ function miBitacora() {
         const fetchData = async () => {
             const response2 = await fetch('http://localhost:3002/equipo-usuarios/Estudiantes');
             const data2 = await response2.json();
-            if (response2.ok) {
+            if (response2.ok && bitacora.length != 0) {
                 setEstudiantes(data2);
+                alert('http://localhost:3002/seguimiento-ppi/' + bitacora.codigoEquipo)
                 const response = await fetch('http://localhost:3002/seguimiento-ppi/' + bitacora.codigoEquipo);
-                const data = await response.json();
+                const data = await response.json(); 
                 if (response.ok) {
                     setSeguimiento(data);
                     const asistenciaPromises = [];
-                    data.forEach(element => {
+                    for (let index = 0; index < data.length; index++) {
+                        const element = data[index];
+
                         for (let index = 1; index <= 3; index++) {
                             const name1 = "estudiante" + index;
                             const name2 = "asistenciaEstudiante" + index;
-                            if (element[name1] != null) {
-                                asistenciaPromises.push(
-                                    fetch('http://localhost:3002/usuario/' + element[name1])
-                                        .then(response => response.json())
-                                        .then(data2 => [data2, element[name2]])
-                                );
+                            if (element[name1] != null && element[name1].length != 0) {
+                                const response3 = await fetch('http://localhost:3002/usuario/' + element[name1])
+                                const data3 = await response3.json()
+                                asistenciaPromises.push([data3,element[name2]]);
                             }
                         }
-                    });
-                    const asistenciaData = await Promise.all(asistenciaPromises);
-                    setAsistencia(asistenciaData);
+                    }
+                    setAsistencia(asistenciaPromises);
                 }
             }
         };
@@ -61,8 +63,7 @@ function miBitacora() {
 
 
         fetchData();
-    }, [bitacora]);
-
+    }, [bitacora]); 
     return (
         <div>
 
@@ -142,7 +143,6 @@ function miBitacora() {
                             <tbody className="divide-y divide-gray-200">
                                 {seguimiento.map((item, index) => {
                                     const estados = item.estados
-                                    console.log(item.estados)
                                     estados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
                                     return (
                                         <tr key={item.id}>
@@ -152,6 +152,7 @@ function miBitacora() {
                                             <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-400">{item.observacion} </td>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-gray-400 text-center">{
                                                 asistencia.map((item) => {
+                                                     
                                                     if (item[1] == 1) {
                                                         return (
                                                             <>{item[0].nombre}<br /></>
