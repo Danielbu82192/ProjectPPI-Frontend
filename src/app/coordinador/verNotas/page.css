@@ -1,0 +1,7 @@
+.table-wrapper {
+    overflow-x: hidden;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
