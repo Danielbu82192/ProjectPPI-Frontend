@@ -252,7 +252,53 @@ function Page() {
                                 </tbody>
                             </table>
                             <br />
+                            {equipos.size !== 0 && (
+                                <div>
+                                    <button
+                                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                                        onClick={() => {
+                                            const dataToSend = [];
 
+                                            [...equipos].forEach(equipo => {
+                                                ppiEntregaSOL.forEach(entrega => {
+                                                    const entregaEquipo = entregasMap.get(equipo);
+                                                    if (entregaEquipo) {
+                                                        const entregaEnEquipo = entregaEquipo.find(entregaEquipo => entregaEquipo.Tipo_Entrega_Descripcion === entrega.Tipo_Entrega_Descripcion && entregaEquipo.Entrega_Equipo_PPI_ID !== null);
+                                                        if (entregaEnEquipo) {
+                                                            const calificacion = calificaciones.get(`${equipo}-${entrega.Tipo_Entrega_ID}`);
+                                                            dataToSend.push({
+                                                                Entrega_Equipo_PPI_ID: entregaEnEquipo.Entrega_Equipo_PPI_ID,
+                                                                Calificacion: calificacion !== '' ? parseFloat(calificacion) : null
+                                                            });
+                                                        }
+                                                    }
+                                                });
+                                            });
+
+                                            fetch('https://td-g-production.up.railway.app/entrega-equipo-ppi/updateScores', {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify(dataToSend)
+                                            })
+                                                .then(response => {
+                                                    if (response.ok) {
+                                                        alert('Calificaciones actualizadas correctamente.');
+                                                        window.location.reload();
+                                                    } else {
+                                                        console.error('Error al enviar los datos al backend:', response.statusText);
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    console.error('Error al enviar los datos al backend:', error);
+                                                });
+                                        }}
+                                    >
+                                        Guardar Notas
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                     {/* Mostrar mensaje si no hay entregas para mostrar */}

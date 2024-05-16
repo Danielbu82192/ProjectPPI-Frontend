@@ -41,7 +41,7 @@ function Page() {
                     </div>
                 </div>
                 <div className='p-10'>
-                    <div className="mt-5">
+                    <div className="mt-2">
                         <p>Por favor, asegúrate de descargar el formato <a className="text-green-500 hover:text-green-700" href='./Archivo_Docentes_Asesores.xlsx' download>Archivo_Docentes_Asesores</a>, ya que es el que cumple las condiciones para un correcto funcionamiento. Aquí puedes encontrar la <a className="text-green-500 hover:text-green-700" target='_blank' href='RUTA/GUIA/CUANDO/ESTE/LISTA' download> Guía para importar profesores y asesores al sistema gestion documental PPI.</a> Una vez que estés seguro, puedes proceder a subir tu archivo haciendo clic en el botón a continuación:</p>
                         <br></br>
                         <CargaExcel onClick={handleCargaExcel} />
@@ -60,7 +60,7 @@ function Page() {
                     </div>
                 </div>
                 <div className='p-10'>
-                    <div className="mt-5">
+                    <div className="mt-2">
                         <p>Antes de continuar, te recomendamos tener a la mano todos los archivos Excel de cada asignatura previamente descargados del Portal Académico, posteriormente puedes cargar tus archivos de manera simultánea haciendo clic en el botón a continuación:</p><br></br>
                         <ExcelUploader onUpload={() => setMostrarBoton(true)} />
                     </div>

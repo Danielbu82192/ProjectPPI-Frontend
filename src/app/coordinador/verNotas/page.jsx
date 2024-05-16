@@ -6,6 +6,7 @@ import "./page.css"
 function Page() {
     const [entregas, setEntregas] = useState([]);
     const [equipos, setEquipos] = useState([]);
+    const [equiposConNotas, setEquiposConNotas] = useState([]);
     const [teamMembers, setTeamMembers] = useState({});
     const [calificaciones, setCalificaciones] = useState({});
     const [notasDefinitivas, setNotasDefinitivas] = useState({});
@@ -14,7 +15,9 @@ function Page() {
         const fetchEntregas = async () => {
             try {
                 const response = await axios.get('https://td-g-production.up.railway.app/tipo-entrega/GetAllEntregas');
+
                 setEntregas(response.data);
+
             } catch (error) {
                 console.error('Error fetching data:', error);
             }
@@ -34,6 +37,22 @@ function Page() {
                 setEquipos(equiposAgrupados);
                 // Crear un objeto con los nombres de los miembros del equipo
                 setTeamMembers(equiposAgrupados);
+
+                const equiposConNotas = {};
+
+                response.data.forEach(estudiante => {
+                    const codigoEquipo = estudiante.Codigo_Equipo;
+                    const nombreEstudiante = estudiante.Usuario_Nombre;
+                    const notaAsesoria = parseFloat(estudiante.Nota_Asesoria_Definitiva_Individual);
+
+                    if (!equiposConNotas[codigoEquipo]) {
+                        equiposConNotas[codigoEquipo] = [];
+                    }
+
+                    equiposConNotas[codigoEquipo].push({ nombreEstudiante, notaAsesoria });
+                });
+
+                setEquiposConNotas(equiposConNotas);
 
                 // Obtener calificaciones de entrega para cada equipo
                 const calificaciones = {};
@@ -79,6 +98,10 @@ function Page() {
                         <h1 className='text-4xl font-bold text-gray-600'>Ver Notas</h1>
                     </div>
                 </div>
+                <br />
+                <div className="p-4">
+                    <p style={{ textAlign: 'justify' }}>En esta ventana puedes visualizar todas las notas de todos los equipos del Proyecto Pedagógico Integrador (PPI) de este semestre. Las notas presentadas son de carácter grupal, a excepción de las asesorías y la nota definitiva, las cuales se muestran por estudiante. Cada nota está acompañada por un ícono de descarga, que te permite obtener una entrega específica de un equipo en formato descargable. Explora las calificaciones y descarga los documentos necesarios para un seguimiento detallado del progreso académico.</p>
+                </div>
                 <div className='p-4'>
                     <div className="table-wrapper overflow-x-auto table-responsive">
                         <div className="table-scroll">
@@ -86,25 +109,25 @@ function Page() {
                                 <thead>
                                     <tr className="bg-gray-200">
                                         <th className="border border-gray-300 px-2 py-1">Equipo</th>
-                                        {entregas.map(entrega => (
+                                        {entregas.filter(entrega => entrega.nombre !== "Asesorías").map(entrega => (
                                             <th key={entrega.id} className="border border-gray-300 px-2 py-1.5 w-38">{entrega.nombre}</th>
                                         ))}
+                                        <th className="border border-gray-300 px-2 py-1 w-38">Asesorías</th>
                                         <th className="border border-gray-300 px-2 py-1 w-38">Nota Definitiva PPI</th> {/* Nueva columna */}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Object.entries(teamMembers).map(([codigoEquipo, members], index) => (
                                         <tr key={index}>
-                                            <td className="border border-gray-300 px-4 py-2">
-                                                {codigoEquipo}
-                                                <br /><br />
+                                            <td className="border border-gray-300 px-4 py-2 font-b">
+                                                <span className="font-bold">{codigoEquipo}</span>
                                                 {members.map((member, idx) => (
-                                                    <div key={idx} className="ml-2 text-xs text-left">
+                                                    <div key={idx} className="ml-0 text-xs text-left border border-gray-300 px-4 py-2 w-38">
                                                         • {member}
                                                     </div>
                                                 ))}
                                             </td>
-                                            {entregas.map(entrega => (
+                                            {entregas.filter(entrega => entrega.nombre !== "Asesorías").map(entrega => (
                                                 <td key={entrega.id} className="border border-gray-300 px-4 py-2 w-38">
                                                     {/* Buscar la calificación de la entrega en el objeto de calificaciones */}
                                                     {calificaciones[codigoEquipo] && calificaciones[codigoEquipo].find(item => item.Tipo_Entrega_Descripcion === entrega.nombre) ? (
@@ -126,7 +149,12 @@ function Page() {
                                                                     height="24"
                                                                     color="#000000"
                                                                     fill="none"
-                                                                    style={{ cursor: 'pointer', marginTop: '5px', marginLeft: '20px' }}
+                                                                    style={{
+                                                                        cursor: 'pointer',
+                                                                        marginTop: '5px',
+                                                                        display: 'block',
+                                                                        margin: 'auto',
+                                                                    }}
                                                                     onClick={() => {
                                                                         const ubicacion = calificaciones[codigoEquipo].find(item => item.Tipo_Entrega_Descripcion === entrega.nombre).Ubicacion_Entrega;
                                                                         window.location.href = ubicacion;
@@ -145,12 +173,50 @@ function Page() {
 
                                                 </td>
                                             ))}
-                                            <td className="border border-gray-300 px-4 py-2 w-38">
-                                                {notasDefinitivas[codigoEquipo]}
+                                            <td key={`asesorias-${codigoEquipo}`} className="border border-gray-300 px-4 py-2 w-38">
+                                                {members.map((member, idx) => {
+                                                    const studentData = equiposConNotas[codigoEquipo].find(student => student.nombreEstudiante === member);
+                                                    return (
+                                                        <div key={idx} className="border border-gray-300 px-4 py-2 w-38">
+                                                            <span>{studentData && !isNaN(studentData.notaAsesoria) ? parseFloat(studentData.notaAsesoria).toFixed(1) : "-"}</span>
+                                                        </div>
+                                                    );
+                                                })}
                                             </td>
+                                            <td key={`notaDefinitiva-${codigoEquipo}`} className="border border-gray-300 px-4 py-2 w-38">
+                                                {members.map((member, idx) => {
+                                                    // Obtener los datos del estudiante
+                                                    const studentData = equiposConNotas[codigoEquipo].find(student => student.nombreEstudiante === member);
+
+                                                    // Calcular la nota definitiva PPI
+                                                    let notaDefinitivaPPI = parseFloat(notasDefinitivas[codigoEquipo]);
+
+                                                    // Si existe un valor de nota asesoría para el estudiante, sumarlo a la nota definitiva PPI
+                                                    if (studentData && !isNaN(studentData.notaAsesoria)) {
+                                                        const porcentajeEntregaId8 = entregas.find(entrega => entrega.id === 8)?.Porcentaje_Entrega;
+                                                        if (porcentajeEntregaId8) {
+                                                            const porcentaje = parseFloat(porcentajeEntregaId8) / 100;
+                                                            const notaAsesoria = parseFloat(studentData.notaAsesoria);
+                                                            notaDefinitivaPPI += porcentaje * notaAsesoria;
+                                                        } else {
+                                                            console.error('No se encontró ninguna entrega con id igual a 8');
+                                                        }
+                                                    }
+
+
+                                                    // Mostrar la nota definitiva PPI para el estudiante
+                                                    return (
+                                                        <div key={idx} className="border border-gray-300 px-4 py-2 w-38">
+                                                            {isNaN(notaDefinitivaPPI) ? "-" : notaDefinitivaPPI.toFixed(1)}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </td>
+
                                         </tr>
                                     ))}
                                 </tbody>
+
                             </table>
                         </div>
                     </div>
