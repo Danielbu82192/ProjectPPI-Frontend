@@ -30,8 +30,8 @@ function page() {
                 const Fecha = new Date();
                 for (const element of data) {
                     const fechainicios = new Date(element.fechaInicio);
-                    const fechafin = new Date(element.fechaFin); 
-                    if (Fecha < fechafin && Fecha > fechainicios) {
+                    const fechafin = new Date(element.fechaFin);
+                    if (Fecha <= fechafin && Fecha >= fechainicios) {
                         setFechaInicio(element.fechaInicio)
                         setFechaFin(element.fechaFin)
                         setContSemana(element.numeroSemana)
@@ -68,6 +68,7 @@ function page() {
     useEffect(() => {
         const cargarAsesor = async () => {
             if (fechaInicio != null && fechaFin != null) {
+
                 const response = await fetch(`http://localhost:3002/usuario/asesor`);
                 const data = await response.json();
                 console.log(data)
@@ -87,7 +88,7 @@ function page() {
                                 }
                             }
                             element.Cumplidas = citasCumplidas
-                            element.Creadas = data2.length
+                            element.Creadas = data2.length - citasCanceladas
                             element.Canceladas = citasCanceladas
                         } catch (error) {
                             element.Cumplidas = 0
@@ -325,7 +326,6 @@ function page() {
                                 <table className="min-w-full divide-y-2 divide-gray-200 border-b-2 border-gray-400 bg-white text-sm">
                                     <thead className="ltr:text-left rtl:text-right">
                                         <tr>
-                                            <th class=" px-4 py-2 font-bold text-gray-600">ID</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Asesor</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Horas Semanales</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Cantidad Citas</th>
@@ -349,7 +349,6 @@ function page() {
 
                                                         return (
                                                             <tr key={item.id}>
-                                                                <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500">{item.id}</td>
                                                                 <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500">{item.nombre}</td>
                                                                 <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-500">{horas.horasAsignadas} </td>
                                                                 <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-500">{horas.horasAsignadas * 3}</td>

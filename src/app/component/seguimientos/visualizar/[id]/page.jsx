@@ -13,26 +13,40 @@ function page({ params }) {
       const data = await response.json();
       if (response.ok) {
         setSeguimiento(data[0]);
-        const estudiantesSet = new Set();
-        const nuevosEstudiantes = [];
-        for (let index = 1; index <= 3; index++) {
-          setEstudiantes([])
-          const name = "estudiante" + index;
-          const name2 = "asistenciaEstudiante" + index;
-          const id = data[0][name];
-          if (id != null && !estudiantesSet.has(id)) {
-            const response2 = await fetch('http://localhost:3002/usuario/' + id);
-            const data2 = await response2.json();
-            estudiantesSet.add(id);
-            nuevosEstudiantes.push([data2, data[0][name2]]);
-          }
-        }
-        setEstudiantes(prev => [...prev, ...nuevosEstudiantes]);
       }
     };
+
     traerEstado();
   }, [params]);
 
+  
+  useEffect(() => {
+    const traerEstado = async () => {
+      if (!seguimiento) return; 
+      setEstudiantes([]); 
+      const promises = [];
+  
+      if (seguimiento.estudiante1 != null) {
+        promises.push(fetchUsuario(seguimiento.estudiante1, seguimiento.asistenciaEstudiante1));
+      }
+      if (seguimiento.estudiante2 != null) {
+        promises.push(fetchUsuario(seguimiento.estudiante2, seguimiento.asistenciaEstudiante2));
+      }
+      if (seguimiento.estudiante3 != null) {
+        promises.push(fetchUsuario(seguimiento.estudiante3, seguimiento.asistenciaEstudiante3));
+      } 
+      const estudiantesData = await Promise.all(promises); 
+      setEstudiantes(estudiantesData);
+    };
+  
+    traerEstado();
+  }, [seguimiento]);
+   
+  const fetchUsuario = async (usuarioId, asistencia) => {
+    const response = await fetch(`http://localhost:3002/usuario/${usuarioId}`);
+    const usuarioData = await response.json();
+    return [usuarioData, asistencia];
+  };
 
   return (
     <div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
@@ -66,8 +80,8 @@ function page({ params }) {
                       </span>
                     </div>
                     <div>
-                      <span className={item[1] == 0 ? ('text-xl px-5 py-1 rounded-xl bg-red-500 text-white font-semibold') : ('text-xl px-5 py-1 rounded-xl bg-emerald-500 text-white font-semibold')}>
-                        {item[1] == 0 ? (<>No asistió.</>) : (<>asistió.</>)}
+                      <span className={item[1] == 0 ||item[1] ==null ? ('text-xl px-5 py-1 rounded-xl bg-red-500 text-white font-semibold max-w-[5px]') : ('text-xl px-8 py-1 rounded-xl bg-emerald-500 text-white font-semibold')}>
+                        {item[1] == 0||item[1] ==null ? (<>No asistió.</>) : (<>Asistió.</>)}
                       </span>
                     </div>
                   </div>

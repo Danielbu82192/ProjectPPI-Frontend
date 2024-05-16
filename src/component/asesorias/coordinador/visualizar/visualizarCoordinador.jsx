@@ -158,10 +158,13 @@ function visualizarCoordinador() {
 
     const buscarSemana = (data) => {
         const fechaCita = new Date(data)
+        fechaCita.setHours(0, 0, 0, 0)
         for (let i = 0; i < seleccionada.length; i++) {
             const rango = seleccionada[i];
             const fechaInicio = new Date(rango.fechaInicio);
             const fechaFin = new Date(rango.fechaFin);
+            fechaInicio.setHours(0, 0, 0, 0)
+            fechaFin.setHours(0, 0, 0, 0) 
             if (fechaCita >= fechaInicio && fechaCita <= fechaFin) {
                 return rango.numeroSemana;
             }
@@ -171,7 +174,7 @@ function visualizarCoordinador() {
     return (
         <div>
             <div className="flex items-center w-full">
-                <div onClick={() => { setFiltroRario(!filtroRadio); setAuxCitas(citas) }} className={`cursor-pointer  flex justify-center items-center border-2 rounded-md  p-1.5 ${filtroRadio ? ('bg-red-400 border-red-400') : ('border-gray-300')}`}>
+                <div onClick={() => { setFiltroRario(!filtroRadio); setAuxCitas(citas);setAuxCitas2(citas) }} className={`cursor-pointer  flex justify-center items-center border-2 rounded-md  p-1.5 ${filtroRadio ? ('bg-red-400 border-red-400') : ('border-gray-300')}`}>
                     {filtroRadio ? (<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
                     </svg>
@@ -246,7 +249,7 @@ function visualizarCoordinador() {
                                     return (
                                         <tr key={item.id}>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500">{buscarSemana(item.fecha)}</td>
-                                            <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500">{format(item.fecha, 'EEEE dd', { locale: es      })}</td>
+                                            <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500">{format(item.fecha, 'EEEE dd', { locale: es })}</td>
                                             <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-500">{item.hora.split(':')[0]}:{item.hora.split(':')[1]} </td>
                                             <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-500">{item.usuariocitaequipo.nombre}</td>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-gray-400 text-center">

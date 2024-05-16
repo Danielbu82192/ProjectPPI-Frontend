@@ -80,13 +80,8 @@ function modSol() {
         const login = async () => {
             const usuarioNest = localStorage.getItem('U2FsdGVkX1');
             const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
-            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8)) 
-            const response = await fetch(`http://localhost:3002/usuario/${usuarioN.correo}/${usuarioN.clave}`);
-            const data = await response.json(); 
-            if (response.ok) { 
-                console.log(data)
-                setUsuarioSol(data)
-            }
+            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+            setUsuarioSol(usuarioN)
         }
         login()
         traerEquipos();
@@ -127,8 +122,8 @@ function modSol() {
                 <div className='grid grid-cols-2 sm:grid-cols-4   xl:grid-cols-9 gap-5'>
                     {Object.entries(auxEquipo).map(([key, value]) => {
                         const bitacora = value.bitacora
-                        const modSol = value.moduloSol[0] 
-                        if (usuarioSol != null) {  
+                        const modSol = value.moduloSol[0]
+                        if (usuarioSol != null) {
                             if (modSol.id == usuarioSol.id) {
                                 return (
                                     <div key={key} className='sm:mt-3'>

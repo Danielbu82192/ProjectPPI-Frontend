@@ -8,6 +8,7 @@ function page({ params }) {
 
     const [asesor, setAsesor] = useState([])
     const [auxCitas, setAuxCitas] = useState([])
+    const [estudiantes, setEstudiantes] = useState([])
     const [auxCitasSemanas, setAuxCitasSemanas] = useState([])
     const [auxCitas2, setAuxCitas2] = useState([])
     const [semana, setSemana] = useState([])
@@ -199,7 +200,14 @@ function page({ params }) {
                 setAuxCitas(auxiliar)
             }
         }
-
+        const fetchData = async () => {
+            const response2 = await fetch('http://localhost:3002/equipo-usuarios/Estudiantes');
+            const data2 = await response2.json();
+            if (response2.ok) {
+                setEstudiantes(data2); 
+            }
+        };
+        fetchData();
         cargarAsesor()
     }, []);
     return (
@@ -384,7 +392,6 @@ function page({ params }) {
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Semana</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Fecha</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Hora</th>
-                                            <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Asesor</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Estudiantes</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Estado</th>
                                             <th class="whitespace-nowrap px-4 py-2 font-bold text-gray-600">Bitácora</th>
@@ -393,7 +400,11 @@ function page({ params }) {
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
                                         {auxCitas.map((item, index) => {
-                                            const equipo = item.equipo
+                                            let equipo=[];
+                                            //const equipo = estudiantes[item.equipocita]
+                                            if(item.equipocita){
+                                                equipo = estudiantes[item.equipocita.codigoEquipo]
+                                            } 
                                             if (index >= currentPage * 10 && index < (currentPage + 1) * 10) {
                                                 let numeroSeman = 0;
                                                 for (let index = 0; index < semana.length; index++) {
@@ -409,10 +420,9 @@ function page({ params }) {
                                                     <tr key={item.id}>
                                                         <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500">{numeroSeman}</td>
                                                         <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-500"> {capitalizeFirstLetter(format(item.fecha, 'EEEE dd', { locale: es }))}</td>
-                                                        <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-500">{item.hora.split(':')[0]}:{item.hora.split(':')[1]} </td>
-                                                        <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-500">{item.usuariocitaequipo.nombre}</td>
+                                                        <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-500">{item.hora.split(':')[0]}:{item.hora.split(':')[1]} </td> 
                                                         <td className="whitespace-nowrap px-4 py-2 font-semibold text-gray-400 text-center">
-                                                            {equipo != null ?
+                                                            {equipo.length != 0 ?
                                                                 (equipo.map((item) => (
                                                                     <>{item.nombre}<br /></>
                                                                 ))) : (<span className='font-semibold text-gray-400'>No resgistrado</span>)

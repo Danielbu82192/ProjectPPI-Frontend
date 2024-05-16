@@ -14,7 +14,7 @@ function calendario() {
     const [numSemana, setNumSemana] = useState([])
     const [diasConst, setDiasConst] = useState(['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
     const [numeroDiaLunes, setNumeroDiaLunes] = useState(null);
-    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/05/2024"));
+    const [fechaPruebas, setFechaPruebas] = useState(new Date());
     const [idAsesor, setIdAsesor] = useState()
     let horasid = '';
     const horasIniciales = 6; // Hora inicial para empezar
@@ -43,7 +43,7 @@ function calendario() {
         const usuarioNest = localStorage.getItem('U2FsdGVkX1');
         if (usuarioNest != null) {
             const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
-            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8)) 
+            const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
             setIdAsesor(usuarioN.id)
             busacrCitas(usuarioN.id)
         }
@@ -150,9 +150,9 @@ function calendario() {
                 </div>
                 {
                     numSemana.map((item) => (
-                        <div key={item[1]} className='border-l border-gray-300'>
-                            <p className="text-gray-400">{item[1]}</p>
-                            <p className="font-bold text-gray-700 text-xl">{item[0]}</p>
+                        <div key={item[1]} className='border-l border-gray-300 overflow-hidden'>
+                            <p className="px-2 text-gray-400">{item[1]}</p>
+                            <p className="px-2 font-bold text-gray-700 text-xl text-ellipsis">{item[0]}</p>
 
                         </div>
                     ))

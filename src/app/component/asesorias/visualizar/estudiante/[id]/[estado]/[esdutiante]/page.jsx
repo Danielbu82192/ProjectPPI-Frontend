@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import MostrarEstudiante from '@/component/asesorias/mostrar/estudiante/mostrarEstudiante'
 import { format } from 'date-fns';
 import { useRouter } from "next/navigation";
+import CryptoJS from 'crypto-js';
 
 function page({ params }) {
     const [showAlert, setShowAlert] = useState(false);
@@ -17,6 +18,29 @@ function page({ params }) {
     const [hora, setHora] = useState('');
     const [salon, setSalon] = useState('');
     const router = useRouter();
+    const [showAlertDelete, setShowAlertDelete] = useState(false);
+    const [CancelId, setCancelId] = useState('');
+    const [CancelCalendarId, setCancelCalendarId] = useState('');
+    const cancelCauses = ["Calamidad doméstica.", "Incapacidad física.", "Quebranto de salud.", "Dificultad de acceso tecnologíco.", "Compromiso académico/laboral imprevisto"]
+
+    const handleShowAlertDelete = (idDate, idCalendar) => {
+        setShowAlertDelete(true);
+        setCancelId(idDate);
+        setCancelCalendarId(idCalendar);
+    };
+
+    const handleConfirm = (confirm) => {
+        if (confirm) {
+            const causeInput = document.getElementById('causes').value;
+            if (causeInput !== 'Nothing') {
+                cancelarCita(CancelId, CancelCalendarId, causeInput)
+                setShowAlertDelete(false);
+            } else {
+                return null
+            }
+        }
+        setShowAlertDelete(false);
+    };
 
     function formatDate(dateString) {
         return format(new Date(dateString), 'dd/MM/yyyy');
@@ -44,10 +68,13 @@ function page({ params }) {
                     setSalon(data2[0].salon)
                 }
             } else if (params.estado == '4') {
-                const response = await fetch(`http://localhost:3002/equipo-ppi/1`);
+                const usuarioNest = localStorage.getItem('U2FsdGVkX1');
+                const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
+                const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
+                const response = await fetch('http://localhost:3002/equipo-ppi/equipo/' + usuarioN.usuario[0].codigoEquipo);
                 const data = await response.json();
                 if (response.ok) {
-                    const canceladas = data[0].canceladas;
+                    const canceladas = data.canceladas;
                     for (const item in canceladas) {
                         if (canceladas[item].id == params.id) {
                             setCita(canceladas[item])
@@ -64,10 +91,13 @@ function page({ params }) {
         }
         traerCita();
     }, []);
-    const cancelarCita = async (id, idCalendar) => { 
+
+    const cancelarCita = async (id, idCalendar, causeInput) => {
+
         const dataCrearMeet = {
-            "eventId": idCalendar 
-        }; 
+            "eventId": idCalendar,
+            "cause": causeInput
+        };
         const requestOptionsMEET = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -77,7 +107,7 @@ function page({ params }) {
         if (!responseMeet.ok) {
             setShowAlert(true)
             return
-        } 
+        }
         const dataCita = {
             "link": " ",
             "equipocita": null,
@@ -125,7 +155,7 @@ function page({ params }) {
             if (responseCita.status === 'fulfilled' && responseEquipo.status === 'fulfilled') {
                 setShowCorrecto(true);
                 setTimeout(() => {
-                    router.push('/asesorias/visualizar/estudiante');
+                    router.push('/component/asesorias/visualizar/estudiante');
                 }, 2000);
             } else {
                 setShowAlert(true);
@@ -217,14 +247,18 @@ function page({ params }) {
                             <div className="m-4 sm:m-10 text-center">
                                 <div>
                                     {tipoCita.id == 1 ? (
-                                        <h1 className="text-2xl  font-bold text-gray-600">Enlace:</h1>
+                                        <h1 className="text-2xl font-bold text-gray-600">Enlace:</h1>
                                     ) : (
-                                        <h1 className="text-2xl  font-bold text-gray-600">Ubicación:</h1>
+                                        <h1 className="text-2xl font-bold text-gray-600">Ubicación:</h1>
                                     )}
-                                </div><div>
+                                </div>
+                                <div className="flex flex-col min-w-full justify-center items-center">
                                     {tipoCita.id == 1 ? (
-                                        <a href={cita.link} className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
-                                            {cita.link}       </a>
+                                        <a href={cita.link} className="flex flex-row min-w-[60px] max-w-[60px] min-h-[60px] max-h-[60px] justify-center items-center">
+                                            <svg className="w-min-[50px] max-w-[50px] object-scale-down" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
+                                                <rect width="16" height="16" x="12" y="16" fill="#fff" transform="rotate(-90 20 24)"></rect><polygon fill="#1e88e5" points="3,17 3,31 8,32 13,31 13,17 8,16"></polygon><path fill="#4caf50" d="M37,24v14c0,1.657-1.343,3-3,3H13l-1-5l1-5h14v-7l5-1L37,24z"></path><path fill="#fbc02d" d="M37,10v14H27v-7H13l-1-5l1-5h21C35.657,7,37,8.343,37,10z"></path><path fill="#1565c0" d="M13,31v10H6c-1.657,0-3-1.343-3-3v-7H13z"></path><polygon fill="#e53935" points="13,7 13,17 3,17"></polygon><polygon fill="#2e7d32" points="38,24 37,32.45 27,24 37,15.55"></polygon><path fill="#4caf50" d="M46,10.11v27.78c0,0.84-0.98,1.31-1.63,0.78L37,32.45v-16.9l7.37-6.22C45.02,8.8,46,9.27,46,10.11z"></path>
+                                            </svg>
+                                        </a>
                                     ) : (
                                         <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
                                             {salon}       </span>
@@ -232,21 +266,46 @@ function page({ params }) {
 
                                 </div>
                             </div>
-                            {estadoCita.id == 5 ? (
-                                <div className="  sm:m-10 grid grid-cols-2">
-                                    <button onClick={() => { router.push('component/asesorias/visualizar/estudiante/' + cita.modificaciones + '/6'); }} class="text-white xl:mt-4 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Nueva cita</button>
-                                </div>
-                            ) : (null)
-                            }
+
                         </div>
-                        <div className="justify-center">
+                        <div className="flex justify-center">
                             {estadoCita.id == 2 ? (
-                                <button onClick={() => { cancelarCita(cita.id, cita.idCalendar) }} class="text-white  h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Cancelar</button>
+                                <button onClick={() => { handleShowAlertDelete(cita.id, cita.idCalendar) }} class="text-white h-14 py-2 px-4 w-full rounded bg-red-400 hover:bg-red-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5 min-w-[250px] max-w-[250px]">Cancelar</button>
 
                             ) : estadoCita.id == 3 ? (
-                                <button onClick={() => { verAsesoria(cita.id) }} class="text-white   h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver asesoría</button>
+                                <button onClick={() => { verAsesoria(cita.id) }} class="text-white   h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5 min-w-[250px] max-w-[250px]">Ver asesoría</button>
 
-                            ) : (<div className='pb-5'></div>)}
+                            ) : estadoCita.id == 5 ? (
+                                <div className="flex justify-center">
+                                    <button onClick={() => { router.push('/component/asesorias/visualizar/estudiante/' + cita.modificaciones + '/6/'+params.esdutiante); }} class="text-white h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5 min-w-[250px] max-w-[250px]">Nueva cita</button>
+                                </div>
+                            ) : (<div className='pb-5'></div>)
+                            }
+                            {showAlertDelete && (<>
+                                <div className="fixed inset-0 z-10 bg-grey bg-opacity-10 backdrop-blur-sm flex justify-center items-center">
+                                    <div class="flex flex-col justify-center content-center items-center rounded-lg bg-white p-4 shadow-2xl min-w-[50vw] max-w-[50vw] border border-solid border-gray-300">
+                                        <h2 class="text-lg font-bold">¿Deseas cancelar esta cita?</h2>
+                                        <p class="mt-2 text-sm text-gray-800">
+                                            Por favor indique el motivo de cancelación (Obligatorio).
+                                        </p>
+                                        <select name="" id="causes">
+                                            <option value="Nothing">Seleccione un motivo</option>
+                                            {cancelCauses.map((cancelCause, index) => (
+                                                <option key={index} value={cancelCause}>{cancelCause}</option>
+                                            ))}
+                                        </select>
+                                        <div class="mt-4 flex flex-row flex-wrap gap-2 min-w-full items-center content-center justify-center gap-2">
+                                            <button type="button" class="min-w-[25%] rounded-lg bg-green-400 px-4 py-2 text-sm font-medium text-white hover:bg-green-500" onClick={() => handleConfirm(true)}>
+                                                Confirmar
+                                            </button>
+                                            <button type="button" class="min-w-[25%] rounded-lg bg-red-400 px-4 py-2 text-sm font-medium text-white hover:bg-red-500" onClick={() => handleConfirm(false)}>
+                                                Cancelar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -228,8 +228,6 @@ export default function page() {
 
     const agendarCita = async () => {
         try {
-            
-            alert(fechaPruebas)
             const fecha =new Date(fechaPruebas);
             if (estadoPedirCita) {
                 if (segundaAsesoria) {
@@ -273,7 +271,6 @@ export default function page() {
                     "conferenceDataVersion": Tcita.toString()
                 };
 
-                alert(fechaPruebas)
                 console.log(dataCrearMeet)
                 const requestOptionsMEET = {
                     method: 'POST',
@@ -291,7 +288,6 @@ export default function page() {
                     linCita = dataMeet.meetLink
                 }
  
-                alert(fechaPruebas)
                 const datosCita = {
                     "estadoCita": "2",
                     "equipocita": "1",
@@ -306,7 +302,6 @@ export default function page() {
                 };
                 const responseCita = await fetch('http://localhost:3002/citas-asesoria-ppi/' + horaSeleccionada, requestOptionsCita);
  
-            alert(fechaPruebas)
                 if (responseCita.ok) {
                     const fechaActual =new Date(fechaPruebas);
                     const fechaLunes = new Date(fechaActual);
@@ -317,14 +312,10 @@ export default function page() {
                         const semana = semanas[i];
                         const fechaInicio = new Date(semana.fechaInicio);
                         const fechaFin = new Date(semana.fechaFin);
-                        alert(fechaPruebas)
-                        alert(fechaInicio)
-                        alert(fechaFin)
                         if (fechaPruebas >= fechaInicio && fechaPruebas <= fechaFin) {
                             numSemana = semana.numeroSemana;
                         }
                     } 
-                    alert(numSemana)
                     const datosSeguimiento = {
                         "fecha": fechaActual,
                         "citas": horaSeleccionada,

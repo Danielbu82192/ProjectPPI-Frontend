@@ -41,31 +41,27 @@ function page() {
     }, []);
 
     const crearVariablesSesion = async (datosGoogle) => {
-        try {
-            const response2 = await fetch('http://localhost:3002/usuario/correos/' + datosGoogle.email);
-            const usuario = await response2.json();
-            console.log(usuario)
-            if (response2.ok && usuario.length != 0) {
-                /* const datos = {
-                     "datosGoogle": datosGoogle
-                 }
-                 const requestOptions = {
-                     method: 'PATCH',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(datos)
-                 };
-                 const response = await fetch('http://localhost:3002/usuario/correo/' + datosGoogle.email, requestOptions);
-                 */
-                const googleCifrado = CryptoJS.AES.encrypt(JSON.stringify(datosGoogle), 'PPIITYTPIJC').toString();
-                const nestCifrado = CryptoJS.AES.encrypt(JSON.stringify(usuario), 'PPIITYTPIJC').toString();
-                localStorage.setItem('U2FsdGVkX1', nestCifrado);
-                localStorage.setItem('U2FsdGVkX2', googleCifrado);
-                router.push('/component')
+        const response2 = await fetch('http://localhost:3002/usuario/correos/' + datosGoogle.email);
+        const usuario = await response2.json();
+        console.log(usuario)
+        if (response2.ok && usuario.length != 0) {
+            /* const datos = {
+                 "datosGoogle": datosGoogle
+             }
+             const requestOptions = {
+                 method: 'PATCH',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(datos)
+             };
+             const response = await fetch('http://localhost:3002/usuario/correo/' + datosGoogle.email, requestOptions);
+             */
+            const googleCifrado = CryptoJS.AES.encrypt(JSON.stringify(datosGoogle), 'PPIITYTPIJC').toString();
+            const nestCifrado = CryptoJS.AES.encrypt(JSON.stringify(usuario), 'PPIITYTPIJC').toString();
+            localStorage.setItem('U2FsdGVkX1', nestCifrado);
+            localStorage.setItem('U2FsdGVkX2', googleCifrado);
+            router.push('/component')
 
-            } else {
-                setShowAlert(true)
-            }
-        } catch (e) {
+        } else {
             setShowAlert(true)
         }
     }

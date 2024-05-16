@@ -6,7 +6,7 @@ import CryptoJS from 'crypto-js';
 
 function page() {
 
-    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/07/2024"));
+    const [fechaPruebas, setFechaPruebas] = useState(new Date());
     const [semanaSeleccionada, setSemanaSeleccionada] = useState([])
 
     const [usuarioActivo, setUsuarioActivo] = useState([])

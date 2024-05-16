@@ -47,7 +47,6 @@ function page({ params }) {
             const data = await response.json();
             if (response.ok) {
                 setSemanas(data)
-                console.log(data)
             }
         }
 
@@ -66,29 +65,10 @@ function page({ params }) {
                     const data = await response.json();
                     if (response.ok) {
                         setSeguimiento(data);
-                        const asistenciaPromises = [];
-                        data.forEach(element => {
-                            for (let index = 1; index <= 3; index++) {
-                                const name1 = "estudiante" + index;
-                                const name2 = "asistenciaEstudiante" + index;
-                                if (element[name1] != null) {
-                                    asistenciaPromises.push(
-                                        fetch('http://localhost:3002/usuario/' + element[name1])
-                                            .then(response => response.json())
-                                            .then(data2 => [data2, element[name2]])
-                                    );
-                                }
-                            }
-                        });
-                        const asistenciaData = await Promise.all(asistenciaPromises);
-                        setAsistencia(asistenciaData);
                     }
                 }
             }
         };
-
-
-
         fetchData();
     }, [bitacora]);
     useEffect(() => {
@@ -101,6 +81,40 @@ function page({ params }) {
         }
     }, [showCorrecto]);
 
+
+    useEffect(() => {
+        const traerEstado = async () => {
+            if (!seguimiento) return;
+            setEstudiantes([]);
+            const promises = {};
+            for (let index = 0; index < seguimiento.length; index++) {
+                const element = seguimiento[index];
+                const vect = []
+                if (element.estudiante1 != null) {
+                    const aux = await fetchUsuario(element.estudiante1, element.asistenciaEstudiante1)
+                    vect.push(aux);
+                }
+                if (element.estudiante2 != null) {
+                    const aux = await fetchUsuario(element.estudiante2, element.asistenciaEstudiante2)
+                    vect.push(aux);
+                }
+                if (element.estudiante3 != null) {
+                    const aux = await fetchUsuario(element.estudiante3, element.asistenciaEstudiante3)
+                    vect.push(aux);
+                }
+                promises[element.id] = vect
+            }
+            setEstudiantes(promises);
+        };
+
+        traerEstado();
+    }, [seguimiento]);
+
+    const fetchUsuario = async (usuarioId, asistencia) => {
+        const response = await fetch(`http://localhost:3002/usuario/${usuarioId}`);
+        const usuarioData = await response.json();
+        return [usuarioData, asistencia];
+    };
     useEffect(() => {
         if (showCorrecto2) {
             const timer = setTimeout(() => {
@@ -119,33 +133,23 @@ function page({ params }) {
 
     const agregarTiempo = async (id, anterior) => {
         const datos = {
-            "fecha": new Date(),
-            "estadoSeguimiento": 1,
-            "seguimiento": id
+            "estadoSeguimiento": 3
         }
         const requestOptions = {
-            method: 'POST',
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(datos)
         };
-        const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/', requestOptions);
+        const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/' + anterior, requestOptions);
         if (response.ok) {
-            const datos = {
-                "estadoSeguimiento": 3
-            }
-            const requestOptions = {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            };
-            const response = await fetch('http://localhost:3002/estado-seguimiento-cambio/' + anterior, requestOptions);
-            if (response.ok) {
-                setShowCorrecto(true)
-            }
+            setShowCorrecto(true)
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
     }
 
-    const noAsistencia = async (id,idEstado) => {
+    const noAsistencia = async (id, idEstado) => {
         const dato = {
             "compromiso": "NO ASISTIÓ",
             "observacion": "NO ASISTIÓ",
@@ -275,6 +279,7 @@ function page({ params }) {
                                         <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Compromisos</th>
                                         <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Observaciones</th>
                                         <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Asistencias</th>
+                                        <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Asesor</th>
                                         <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600"></th>
                                     </tr>
                                 </thead>
@@ -283,6 +288,7 @@ function page({ params }) {
                                         const estados = item.estados
                                         const citas = item.citas
                                         const asesor = citas.usuariocitaequipo
+                                        const asistenciaEstudiantes = estudiantes[item.id]
                                         let numSemana = item.semana
                                         estados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
                                         return (
@@ -292,17 +298,23 @@ function page({ params }) {
                                                 <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-400">{item.compromiso} </td>
                                                 <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-400">{item.observacion} </td>
                                                 <td className="whitespace-nowrap px-4 py-2 font-semibold text-gray-400 text-center">{
-                                                    asistencia.map((item) => {
-                                                        if (item[1] == 1) {
-                                                            return (
-                                                                <>{item[0].nombre}<br /></>
-                                                            )
-                                                        }
-                                                    })
+
+                                                    asistenciaEstudiantes ? (
+                                                        asistenciaEstudiantes.map((item) => {
+                                                            if (item[1] == 1) {
+                                                                return (
+                                                                    <>{item[0].nombre}<br /></>
+                                                                )
+                                                            }
+                                                        })
+                                                    ) : (null)
                                                 }
-                                                </td><td className="whitespace-normal px-4 py-2 text-center flex text-gray-700">
+                                                </td>
+
+                                                <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-400">{asesor.nombre} </td>
+                                                <td className="whitespace-normal px-4 py-2 text-center flex text-gray-700">
                                                     {
-                                                        rol.id == 3 && asesor.id == 1 && estados[0].estadoSeguimiento.id == 1 && new Date(estados[0].fecha).getDate() == new Date().getDate() ?
+                                                        estados[0].estadoSeguimiento.id == 3||(rol.id == 3 && asesor.id == 1 && estados[0].estadoSeguimiento.id == 1 && new Date(estados[0].fecha).getDate() == new Date().getDate()) ?
                                                             (
                                                                 <><a href={'/component/seguimientos/modificar/' + item.id + '/' + estados[0].id} className=' flex items-center justify-center'>
                                                                     <div className='p-3 rounded-full bg-slate-600'>
@@ -312,7 +324,7 @@ function page({ params }) {
                                                                         </svg>
                                                                     </div>
                                                                 </a>
-                                                                    <button onClick={() => { noAsistencia(item.id,estados[0].id) }} className='ml-5 flex items-center justify-center'>
+                                                                    <button onClick={() => { noAsistencia(item.id, estados[0].id) }} className='ml-5 flex items-center justify-center'>
                                                                         <div className='p-2 rounded-full bg-slate-600'>
                                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="white" class="w-8 h-8">
                                                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />

@@ -44,6 +44,7 @@ function seguimientoMod({ idSeguimiento, idEstado }) {
             if (response.ok) {
                 setEstado(data.estadoSeguimiento);
                 setEstadoSeguimiento(data);
+                console.log(data.estadoSeguimiento)
             }
         }
 
@@ -77,18 +78,18 @@ function seguimientoMod({ idSeguimiento, idEstado }) {
 
 
     const modificarSeguimiento = async () => {
-        if (parseInt(new Date(estadoSeguimiento.fecha).getDate()) == new Date().getDate()) {
-            const horaCita = parseInt(cita.hora.split(':')[1]) + (parseInt(cita.hora.split(':')[0]) * 60)
-            const fechaACtual = new Date();
+        if ((parseInt(new Date(estadoSeguimiento.fecha).getDate()) == new Date().getDate())||estado.id==3) {
+            const horaCita = parseInt(cita.hora.split(':')[1]) + (parseInt(cita.hora.split(':')[0]) * 60) 
+            const fechaACtual = new Date(); 
             const horaActual = (fechaACtual.getHours() * 60) + fechaACtual.getMinutes();
-            if (horaCita - horaActual > 0) {
+            if ((horaCita - horaActual > 0)&&estado.id!=3) {
                 setShowNoCumplido(true)
                 return;
             }
-            if (compromisos.length == 0 && observaciones == 0) {
+            if (compromisos.length == 0 && observaciones == 0) { 
                 setShowAlert(true)
             } else {
-                if (asistencia[0][1] == 0 && asistencia[1][1] == 0) {
+                if (asistencia[0][1] == 0 && asistencia[1][1] == 0) { 
                     setShowAlert(true)
                     return;
                 }
@@ -249,7 +250,7 @@ function seguimientoMod({ idSeguimiento, idEstado }) {
 
             </div>
             <div className='mt-5'>
-                {estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date().getDate()) ? (<button onClick={() => { modificarSeguimiento() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
+                {(estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date().getDate()))||estado.id == 3 ? (<button onClick={() => { modificarSeguimiento() }} class="text-white py-2 px-4 w-full rounded bg-green-400 hover:bg-green-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Modificar</button>
                 ) : (null)}
             </div>
             {showAlert && (

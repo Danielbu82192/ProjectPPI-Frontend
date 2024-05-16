@@ -1,9 +1,9 @@
 "use client"
 /* eslint-disable react-hooks/rules-of-hooks */
 import React, { useEffect, useState } from 'react'
+import { es } from 'date-fns/locale';
 import { format } from 'date-fns';
 import './css/style.css'
-import { es } from 'date-fns/locale';
 import CryptoJS from 'crypto-js';
 
 function miBitacora() {
@@ -19,11 +19,10 @@ function miBitacora() {
             const usuarioNest = localStorage.getItem('U2FsdGVkX1');
             const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
             const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
-            setUsuario(usuarioN) 
+            setUsuario(usuarioN)
             const response = await fetch(`http://localhost:3002/equipo-usuarios/EstudiantesBitacora/${usuarioN.correo}`);
             if (response.ok) {
-                const data = await response.json()
-                console.log(data)
+                const data = await response.json() 
                 setBitacora(data)
 
             }
@@ -34,36 +33,53 @@ function miBitacora() {
         const fetchData = async () => {
             const response2 = await fetch('http://localhost:3002/equipo-usuarios/Estudiantes');
             const data2 = await response2.json();
-            if (response2.ok && bitacora.length != 0) {
+            if (response2.ok) {
                 setEstudiantes(data2);
-                alert('http://localhost:3002/seguimiento-ppi/' + bitacora.codigoEquipo)
                 const response = await fetch('http://localhost:3002/seguimiento-ppi/' + bitacora.codigoEquipo);
-                const data = await response.json(); 
+                const data = await response.json();
                 if (response.ok) {
                     setSeguimiento(data);
-                    const asistenciaPromises = [];
-                    for (let index = 0; index < data.length; index++) {
-                        const element = data[index];
-
-                        for (let index = 1; index <= 3; index++) {
-                            const name1 = "estudiante" + index;
-                            const name2 = "asistenciaEstudiante" + index;
-                            if (element[name1] != null && element[name1].length != 0) {
-                                const response3 = await fetch('http://localhost:3002/usuario/' + element[name1])
-                                const data3 = await response3.json()
-                                asistenciaPromises.push([data3,element[name2]]);
-                            }
-                        }
-                    }
-                    setAsistencia(asistenciaPromises);
                 }
             }
+        }; 
+        fetchData();
+    }, [bitacora]);
+
+
+    useEffect(() => {
+        const traerEstado = async () => {
+            if (!seguimiento) return;
+            setEstudiantes([]);
+            const promises = {};
+            for (let index = 0; index < seguimiento.length; index++) {
+                const element = seguimiento[index];
+                const vect = []
+                if (element.estudiante1 != null) {
+                    const aux = await fetchUsuario(element.estudiante1, element.asistenciaEstudiante1)
+                    vect.push(aux);
+                }
+                if (element.estudiante2 != null) {
+                    const aux = await fetchUsuario(element.estudiante2, element.asistenciaEstudiante2)
+                    vect.push(aux);
+                }
+                if (element.estudiante3 != null) {
+                    const aux = await fetchUsuario(element.estudiante3, element.asistenciaEstudiante3)
+                    vect.push(aux);
+                }
+                promises[element.id] = vect
+            }
+            setEstudiantes(promises);
         };
 
+        traerEstado();
+    }, [seguimiento]);
 
+    const fetchUsuario = async (usuarioId, asistencia) => {
+        const response = await fetch(`http://localhost:3002/usuario/${usuarioId}`);
+        const usuarioData = await response.json();
+        return [usuarioData, asistencia];
+    };
 
-        fetchData();
-    }, [bitacora]); 
     return (
         <div>
 
@@ -132,7 +148,7 @@ function miBitacora() {
                         <table className="min-w-full divide-y-2 divide-gray-200 bg-white text-sm">
                             <thead className="ltr:text-left rtl:text-right">
                                 <tr>
-                                    <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Número    </th>
+                                    <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Semana    </th>
                                     <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Fecha</th>
                                     <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Compromisos</th>
                                     <th className="whitespace-nowrap px-4 py-2 font-blod text-gray-600">Observaciones</th>
@@ -143,23 +159,26 @@ function miBitacora() {
                             <tbody className="divide-y divide-gray-200">
                                 {seguimiento.map((item, index) => {
                                     const estados = item.estados
+                                    console.log(item.estados)
+                                    const asistenciaEstudiantes = estudiantes[item.id]
                                     estados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
                                     return (
                                         <tr key={item.id}>
-                                            <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-400">{item.id}</td>
+                                            <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-400">{item.semana}</td>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-center text-gray-400">{format(item.citas.fecha, 'MMMM dd', { locale: es })}</td>
                                             <td className="whitespace-normal text-center font-semibold px-4 py-2 text-gray-400">{item.compromiso} </td>
                                             <td className="whitespace-normal px-4 py-2 font-semibold text-center text-gray-400">{item.observacion} </td>
                                             <td className="whitespace-nowrap px-4 py-2 font-semibold text-gray-400 text-center">{
-                                                asistencia.map((item) => {
-                                                     
+                                             asistenciaEstudiantes ? (
+                                                asistenciaEstudiantes.map((item) => {
                                                     if (item[1] == 1) {
                                                         return (
                                                             <>{item[0].nombre}<br /></>
                                                         )
                                                     }
                                                 })
-                                            }
+                                            ):(null)
+                                        }
                                             </td><td className="whitespace-normal px-4 py-2 text-center flex text-gray-700">
                                                 <a href={'/component/seguimientos/visualizar/' + item.id} className=' flex items-center justify-center'>
                                                     <div className='p-3 rounded-full bg-gray-600'>

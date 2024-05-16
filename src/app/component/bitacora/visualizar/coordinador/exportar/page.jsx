@@ -10,8 +10,7 @@ function page() {
 
     const [equipo, setEquipo] = useState([])
     const [selectExport, setSelectExport] = useState([])
-    const router = useRouter();
-    //http://localhost:3002/equipo-ppi/exportar
+    const router = useRouter(); 
     const exportarBitacora = async () => {
         const response = await fetch('http://localhost:3002/equipo-ppi/exportar/' + selectExport);
         const filePath = await response.text()
@@ -23,8 +22,7 @@ function page() {
             setTimeout(() => {
                 newWindow.close();
             }, 2000);
-        } else {
-            // Si no se pudo abrir la ventana, mostrar un mensaje de error
+        } else { 
             console.error('No se pudo abrir la ventana para descargar el archivo.');
         }
 
@@ -73,7 +71,7 @@ function page() {
                     <div>
                         <h1 className='text-3xl font-bold text-gray-600'>Exportar bitacora</h1>
                     </div>
-                    <div className="text-center grid grid-cols-2">
+                    <div className="text-center grid grid-cols-2 mt-5">
                         <div>
                             <h1 className="text-2xl sm:text-xl font-bold text-gray-600">Seleccione el grupo para exportar:</h1>
                         </div>
@@ -97,7 +95,7 @@ function page() {
 
 
                     </div>
-                    <div> 
+                    <div className='mt-5'> 
                         <div>
                             <h1 className='text-3xl font-bold text-gray-600'>Exportar Citas Asesores</h1>
                         </div>

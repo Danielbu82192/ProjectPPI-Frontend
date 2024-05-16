@@ -78,10 +78,10 @@ function crear() {
             if (i < 12) {
                 const dato = [`${i}:00`, `${i}:20`, `${i}:40`]
                 setHorasMañana(prevState => [...prevState, dato])
-            } else if (i < 18 && i > 12) {
+            } else if (i < 18 && i >= 12) {
                 const dato = [`${i}:00`, `${i}:20`, `${i}:40`]
                 setHorasTarde(prevState => [...prevState, dato])
-            } else if (i > 18) {
+            } else if (i >= 18) {
                 const dato = [`${i}:00`, `${i}:20`, `${i}:40`]
                 setHorasNoche(prevState => [...prevState, dato])
             }
@@ -247,9 +247,8 @@ function crear() {
         const fechaSabado = new Date(fechaActual); // Clona la fecha actual
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7));
-        const fechaInicio = format(fechaLunes, "dd-MM-yyyy");
-        const fechaFin = format(fechaSabado, "dd-MM-yyyy");
-
+        const fechaInicio = format(fechaLunes, "MM-dd-yyyy");
+        const fechaFin = format(fechaSabado, "MM-dd-yyyy");
         const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${usuarioActual.id}`);
         const data = await response.json();
         if (response.ok) {
@@ -284,8 +283,43 @@ function crear() {
 
     const cambiarEstado = () => {
         citasPendientes.forEach(async (item) => {
+            let Tcita = 1;
+            if (item.tipoCita.id == 2) {
+                Tcita = 0;
+            }
+            const estu = estudiantes[item.equipocita.codigoEquipo]
+            let estudiant = []
+            for (let index = 0; index < estu.length; index++) {
+                const element = estu[index];
+                estudiant.push(element.correo)
+            }
+            estudiant.push(usuarioActual.correo)
+            const dataCrearMeet = {
+                "date": format(item.fecha, 'yyyy-MM-dd'),
+                "dateTime": `${item.hora.split(':')[0]}:${item.hora.split(':')[1]}:00`,
+                "attendees": estudiant,
+                "conferenceDataVersion": Tcita.toString()
+            }; 
+            console.log(dataCrearMeet)
+            const requestOptionsMEET = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataCrearMeet)
+            };
+            const responseMeet = await fetch('http://localhost:3002/google/create-event/', requestOptionsMEET);
+            if (!responseMeet.ok) {
+                setShowError(true)
+                return
+            } 
+            const dataMeet = await responseMeet.json()
+            let linCita = dataMeet.htmlLink
+            if (dataMeet.meetLink != null) {
+                linCita = dataMeet.meetLink
+            }
             const datos = {
                 "estadoCita": 7,
+                "link": linCita,
+                "idCalendar": dataMeet.eventId
             }
             const requestOptions = {
                 method: 'PATCH',
@@ -294,7 +328,6 @@ function crear() {
             };
             const response = await fetch('http://localhost:3002/citas-asesoria-ppi/' + item.id, requestOptions);
             if (true) {
-
                 let numSemana = 0
                 for (let i = 0; i < semanas.length; i++) {
                     const semana = semanas[i];
@@ -316,8 +349,7 @@ function crear() {
                     const name = "estudiante" + (index + 1);
                     datosSeguimiento[name] = element.id
                 });
-
-                console.log(datosSeguimiento)
+ 
                 const requestOptionsSeguimiento = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -330,7 +362,7 @@ function crear() {
                 }
             } else {
                 setShowAlert(true)
-            }
+            } 
         })
     }
 
@@ -356,15 +388,15 @@ function crear() {
             const fechaSabado = new Date(fechaActual);
             fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7));
-            const fechaInicio = format(fechaLunes, "dd-MM-yyyy")
-            const fechaFin = format(fechaSabado, "dd-MM-yyyy")
-            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/Estado/${fechaInicio}/${fechaFin}/${usuarioN.id}/6`);
-
+            const fechaInicio = format(fechaLunes, "yyyy-MM-dd")
+            const fechaFin = format(fechaSabado, "yyyy-MM-dd")
+            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + usuarioN.id);
             const data = await response.json();
             if (response.ok) {
-                if (data.length != 0) {
+                const registrosFiltrados = data.filter(registro => registro.estadoCita.id === 6);
+                if (registrosFiltrados.length != 0) {
                     setShowCitasPendientes(true)
-                    setCitasPendientes(data)
+                    setCitasPendientes(registrosFiltrados)
                 } else {
                     setShowCitasPendientes(false)
                 }
@@ -432,7 +464,7 @@ function crear() {
             </div>) : (
                 <>
                     <div>
-                        <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
+                        <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona la modalidad de la cita:</h1>
 
                         <div className=' justify-center  pt-8 flex gap-4" '>
                             <div className='px-2 py-4'>
@@ -541,7 +573,7 @@ function crear() {
                                                     {items.map((item, index) => (
                                                         <div key={item} className=' py-4'>
                                                             <input onClick={(e) => seleccionarHora(item)} type="checkbox" id={item} name="dia-semana" className=" peer hidden" />
-                                                            <label htmlFor={item} id={`lb${item}`} className="labelCheck select-none cursor-pointer rounded-lg border-2 border-sky-800 py-3 px-6 font-bold text-sky-800 transition-colors duration-200 ease-in-out peer-checked:bg-sky-800 peer-checked:text-white peer-checked:border-sky-200">{item}</label>
+                                                            <label htmlFor={item} id={`lb${item}`} className="labelCheck select-none cursor-pointer rounded-lg border-2 border-primari py-3 px-6 font-bold text-primari transition-colors duration-200 ease-in-out peer-checked:bg-primari peer-checked:text-white peer-checked:border-green-200">{item}</label>
                                                         </div>
                                                     ))}
                                                 </div>

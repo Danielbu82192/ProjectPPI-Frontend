@@ -124,7 +124,14 @@ function page() {
     }, []);
     const crearSemana = async () => {
         let cont = 0;
-        for (let index = 0; index < semanas.length; index++) { 
+        const requestOptions = {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+        };
+        const response = await fetch('http://localhost:3002/semanas/eliminarTodo/', requestOptions);
+        if (!response.ok)
+            return
+        for (let index = 0; index < semanas.length; index++) {
             const datos = {
                 "numeroSemana": index + 1,
                 "fechaInicio": semanas[index][0],

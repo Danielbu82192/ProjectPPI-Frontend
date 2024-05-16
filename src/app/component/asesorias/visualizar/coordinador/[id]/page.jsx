@@ -8,7 +8,7 @@ import { data } from 'autoprefixer';
 
 function page({ params }) {
 
-    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/05/2024")); 
+    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/05/2024"));
 
     const [cita, setCita] = useState([]);
     const [semanaConst, setSemanaConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
@@ -124,7 +124,7 @@ function page({ params }) {
     const verAsesoria = async (id) => {
         const response = await fetch('http://localhost:3002/seguimiento-ppi/Cita/' + id);
         const data = await response.json();
-        router.push('/seguimientos/visualizar/' + data.id);
+        router.push('/component/seguimientos/visualizar/' + data.id);
     }
     useEffect(() => {
         if (showAlert) {
@@ -440,110 +440,43 @@ function page({ params }) {
                 </div>
 
                 {citaEstado.id == 1 ? (
-
-                    <><div className='p-10  grid grid-cols-1 lg:grid-cols-2'>
-                        <div className=" text-center lg:text-right m-4 sm:m-5">
+                    <><div className='p-10  grid grid-cols-1 lg:grid-cols-3'>
+                        <div className=" text-center m-4 sm:m-5">
                             <div>
                                 <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Estado:</h1>
                             </div>
                             <div className=''>
-                                {estadoModificar ? (
-                                    <select
-                                        name="estado"
-                                        id="estado"
-                                        value={selectEstado}
-                                        onChange={(e) => {
-                                            if (e.target.value === "2") {
-                                                setGrupoTrue(true);
-                                                setSelectEstado(2);
-                                                listarEquipo();
-                                            } else {
-                                                setSelectEstado(1);
-                                                setGrupoTrue(false);
-                                            }
-                                        }}
-                                        className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
-                                    >
-                                        <option value="1">Disponible</option>
-                                        <option value="2">Reservado</option>
-                                    </select>
-                                ) :
-                                    (
-                                        <span className="inline-block mt-1 text-2xl sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 bg-gray-500 text-white font-semibold rounded-full">
-                                            {citaEstado.nombre}
-                                        </span>
-                                    )}
+                                <span className="inline-block mt-1 text-2xl sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 bg-gray-500 text-white font-semibold rounded-full">
+                                    {citaEstado.nombre}
+                                </span>
                             </div>
                         </div>
-                        <div className="text-center lg:text-left m-4 sm:m-5">
+                        <div className="text-center m-4 sm:m-5">
                             <div>
                                 <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Fecha:</h1>
                             </div>
                             <div>
-                                {estadoModificar ? (
-
-                                    <select value={numeroDia} onChange={(e) => { setNumeroDia(e.target.value); }} className="mt-1.5 w-full rounded-lg border-gray-300 text-gray-700 sm:text-sm"
-                                    >
-                                        {semanaConst.map((dia, index) => (
-                                            <option key={index} value={numeroDiaLunes + index}>{dia} {numeroDiaLunes + index}</option>
-                                        ))}
-                                    </select>
-                                ) :
-                                    (<span className="inline-block font-semibold text-2xl text-gray-500  sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3  ">
-                                        {fecha}
-                                    </span>
-                                    )}
+                                <span className="inline-block font-semibold text-2xl text-gray-500  sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3  ">
+                                    {fecha}
+                                </span>
                             </div>
                         </div>
-                        <div className=" text-center lg:text-right m-4 sm:m-5">
+                        <div className=" text-center m-4 sm:m-5">
                             <div>
                                 <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Hora:</h1>
                             </div>
                             <div>
-                                {estadoModificar ? (
-                                    <div className='flex'>
-                                        <select value={horaCancelar} onChange={(e) => { setHoraCancelar(e.target.value); }} id="hora" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                            <option value={horaFija} selected>{horaFija}</option>
-                                            {Array.from({ length: horaFin }, (_, i) => i + horaInicio).map(hour => (
-                                                <option key={hour} value={hour.toString().padStart(2, '0')}>{hour.toString().padStart(2, '0')}</option>
-                                            ))}
-                                        </select>
-                                        <select value={minConst} onChange={(e) => { setMinConst(e.target.value); }} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-
-                                            <option value="00">00</option>
-                                            <option value="20">20</option>
-                                            <option value="40">40</option>
-                                        </select>
-                                    </div>
-                                ) : (
-                                    <span className="inline-block font-semibold text-2xl text-gray-500  sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3  ">
-                                        {hora}
-                                    </span>
-                                )}
+                                <span className="inline-block font-semibold text-2xl text-gray-500  sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3  ">
+                                    {hora}
+                                </span>
                             </div>
                         </div>
-                        {grupoTrue ? (
-                            <div className=" m-4 sm:m-5">
-                                <div>
-                                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-600">Grupo:</h1>
-                                </div>
-                                <div>
-                                    <select onChange={(e) => { setIdEquipo(e.target.value); }} id="minutos" className="mt-1 w-full rounded-md border-gray-200 shadow-sm sm:text-sm">
-                                        <option selected disabled>Grupo</option>
-                                        {listEquipos.map((item) => (
-                                            <option key={item.id} value={item.id}>
-                                                {item.codigoEquipo}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>) : null}
                     </div> </>
                 ) : (
 
                     <>
-                        <div className={`p-10  grid grid-cols-1 lg:grid-cols-2  `}>
-                            <div className="m-4 sm:m-5 text-center lg:text-right">
+                        <div className={`p-10  grid grid-cols-1 lg:grid-cols-4  `}>
+                            <div className="m-4 sm:m-5 text-center">
                                 <div>
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Estado:</h1>
                                 </div>
@@ -553,7 +486,7 @@ function page({ params }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="m-4 sm:m-5 px-5 text-center lg:text-left">
+                            <div className="m-4 sm:m-5 px-5 text-center">
                                 <div>
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Fecha:</h1>
                                 </div>
@@ -563,7 +496,7 @@ function page({ params }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="m-4 sm:m-5 px-5 text-center lg:text-right">
+                            <div className="m-4 sm:m-5 px-5 text-center">
                                 <div>
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Hora:</h1>
                                 </div>
@@ -573,7 +506,7 @@ function page({ params }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="m-4 sm:m-5 px-5 text-center lg:text-left">
+                            <div className="m-4 sm:m-5 px-5 text-center">
                                 <div>
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Tipo:</h1>
                                 </div>
@@ -583,7 +516,7 @@ function page({ params }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="m-4 sm:m-5 px-5 text-center lg:text-right">
+                            <div className="m-4 sm:m-5 px-5 text-center">
                                 <div>
                                     {tipoCita.id == 1 ? (
                                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Enlace:</h1>
@@ -593,8 +526,11 @@ function page({ params }) {
                                 </div>
                                 <div className='lg:mr-8'>
                                     {tipoCita.id == 1 ? (
-                                        <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
-                                            {cita.link}       </span>
+                                        <a href={cita.link} className="inline-block ml-5 min-w-[60px] max-w-[60px] min-h-[60px] max-h-[60px] justify-center items-center">
+                                            <svg className="w-min-[50px] max-w-[50px] object-scale-down" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
+                                                <rect width="16" height="16" x="12" y="16" fill="#fff" transform="rotate(-90 20 24)"></rect><polygon fill="#1e88e5" points="3,17 3,31 8,32 13,31 13,17 8,16"></polygon><path fill="#4caf50" d="M37,24v14c0,1.657-1.343,3-3,3H13l-1-5l1-5h14v-7l5-1L37,24z"></path><path fill="#fbc02d" d="M37,10v14H27v-7H13l-1-5l1-5h21C35.657,7,37,8.343,37,10z"></path><path fill="#1565c0" d="M13,31v10H6c-1.657,0-3-1.343-3-3v-7H13z"></path><polygon fill="#e53935" points="13,7 13,17 3,17"></polygon><polygon fill="#2e7d32" points="38,24 37,32.45 27,24 37,15.55"></polygon><path fill="#4caf50" d="M46,10.11v27.78c0,0.84-0.98,1.31-1.63,0.78L37,32.45v-16.9l7.37-6.22C45.02,8.8,46,9.27,46,10.11z"></path>
+                                            </svg>
+                                        </a>
                                     ) : (
                                         <span className="inline-block sm:mt-2 ml-2 sm:ml-4 px-2 sm:px-3 py-1 font-semibold text-2xl text-gray-500 ">
                                             {salon}       </span>
@@ -602,7 +538,7 @@ function page({ params }) {
 
                                 </div>
                             </div>
-                            <div className="m-4 sm:m-5 px-5 text-center lg:text-left">
+                            <div className="m-4 sm:m-5 px-5 text-center">
                                 <div>
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Equipo:</h1>
                                 </div>
@@ -612,7 +548,7 @@ function page({ params }) {
                                     </span>
                                 </div>
                             </div>
-                            <div className="m-4 sm:m-5 px-5 text-center lg:text-right">
+                            <div className="m-4 sm:m-5 px-5 text-center">
                                 <div>
                                     <h1 className="text-2xl sm:text-3xl font-bold text-gray-600">Estudiantes:</h1>
                                 </div>
@@ -627,8 +563,8 @@ function page({ params }) {
                         </div>
                         <div >
                             {citaEstado.id == 5 ? (
-                                <div className="  sm:m-5">
-                                    <button onClick={() => { router.push('/asesorias/visualizar/coordinador/' + cita.modificaciones); }} class="text-white xl:mt-4 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Nueva cita</button>
+                                <div className="flex justify-center">
+                                    <button onClick={() => { router.push('/component/asesorias/visualizar/coordinador/' + cita.modificaciones); }} class="text-white xl:mt-4 h-14 py-2 px-4 w-full rounded bg-orange-400 hover:bg-orange-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5 min-w-[250px] max-w-[250px]">Nueva cita</button>
                                 </div>
                             ) : (null)}
 
@@ -682,16 +618,19 @@ function page({ params }) {
 
                                         </div>
                                     </div>
-                                     
-                                </div>) : (
-                                citaEstado.id == 2 || citaEstado.id == 6 || citaEstado.id == 7 ? (<div className="justify-center">
-                                    <button onClick={() => { verBitacora(equipo.id); }} class="text-white  h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver Bitácora</button> 
 
                                 </div>) : (
+                                citaEstado.id == 2 || citaEstado.id == 6 || citaEstado.id == 7 ? (
+                                    <div className=" flex justify-center">
+                                        <button onClick={() => { verBitacora(equipo.id); }} class="text-white  h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5 min-w-[250px] max-w-[250px]">Ver Bitácora</button>
+
+                                    </div>) : (
                                     citaEstado.id == 3 ? (
-                                        <button onClick={() => { verAsesoria(cita.id) }} class="text-white h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5">Ver asesoría</button>
 
-                                    ):(null)
+                                        <div className=" flex justify-center">
+                                            <button onClick={() => { verAsesoria(cita.id) }} class="text-white h-14 py-2 px-4 w-full rounded bg-indigo-400 hover:bg-indigo-500 shadow hover:shadow-lg font-medium transition transform hover:-translate-y-0.5 min-w-[250px] max-w-[250px]">Ver asesoría</button>
+                                        </div>
+                                    ) : (null)
                                 )
                             )}
 
@@ -699,7 +638,7 @@ function page({ params }) {
 
 
             </div>
-        </div > 
+        </div >
         </>
     )
 }

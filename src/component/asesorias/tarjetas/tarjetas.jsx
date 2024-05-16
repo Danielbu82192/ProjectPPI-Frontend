@@ -30,7 +30,7 @@ function tarjetas() {
             const fechaSabado = new Date(fechaActual);
             fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7));
-            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/Equipo/` + usuarioN.usuario[0].id);
+            const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/Equipo/` + usuarioN.usuario[0].codigoEquipo);
             const data = await response.json();
             if (response.ok) {
                 if (data.length == 0) {

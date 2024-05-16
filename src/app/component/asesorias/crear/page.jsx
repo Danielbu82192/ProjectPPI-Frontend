@@ -6,7 +6,7 @@ import CryptoJS from 'crypto-js';
 import { format } from 'date-fns';
 
 function page() {
-    const [fechaPruebas, setFechaPruebas] = useState(new Date("05/06/2024"));
+    const [fechaPruebas, setFechaPruebas] = useState(new Date());
     const dia = fechaPruebas.getDate()
     const monthIndex = fechaPruebas.getMonth();
     const options = { month: 'long' };
@@ -36,7 +36,7 @@ function page() {
                     const fechaInicio = new Date(element.fechaInicio)
                     const fechaFin = new Date(element.fechaFin)
                     if (fechaInicio <= fecha && fechaFin >= fecha) {
-                        fechaSelec = element 
+                        fechaSelec = element
                         setSemanaSeleccionada(element)
                     }
                 }
@@ -65,22 +65,24 @@ function page() {
             fechaLunes.setDate(diaLunes);
             const fechaSabado = new Date(fechaActual);
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7));
-            const fechaInicio = format(fechaLunes,"yyyy-MM-dd")  
-            const fechaFin = format(fechaSabado,"yyyy-MM-dd")    
-            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+            const fechaInicio = format(fechaLunes, "yyyy-MM-dd")
+            const fechaFin = format(fechaSabado, "yyyy-MM-dd") 
+            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + usuarioN.id);
             const data2 = await response2.json();
             if (response2.ok) {
-                const asesoriasActual = data2.length;
+                const registrosFiltrados = data2.filter(registro => registro.estadoCita.id === 2 || registro.estadoCita.id === 3 || registro.estadoCita.id === 1);
+                const asesoriasActual = registrosFiltrados.length;
                 if (asesoriasActual < CantidadAsesorias) {
                     let citasActual = 0;
                     setCitasActuales([])
                     setCitasPendientes([])
                     data2.forEach(item => {
-                        if (item.estadoCita.id !== 6 && item.estadoCita.id !== 6) {
+                        if (item.estadoCita.id !== 6 && item.estadoCita.id !== 5) {
                             setCitasActuales(prev => [...prev, item]);
                             citasActual = citasActual + 1
                         } else {
-                            setCitasPendientes(prev => [...prev, item]);
+                            if (item.estadoCita.id == 6)
+                                setCitasPendientes(prev => [...prev, item]);
                         }
                     });
                     return CantidadAsesorias - citasActual;

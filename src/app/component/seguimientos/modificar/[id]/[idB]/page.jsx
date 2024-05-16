@@ -29,7 +29,7 @@ function page({ params }) {
                     </div>
                 </div>
                 <div className='p-10'>
-                    {estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date().getDate()) ? (<SeguimientoMod idSeguimiento={params.id} idEstado={params.idB} />) : (<h1 className='text-3xl font-bold text-gray-400'>No puedes editar esta asesoría. Si la fecha u hora han pasado, comunícate con el coordinador para volver a activarla.</h1>)}
+                    {(estado.id == 1 && parseInt(new Date(estadoSeguimiento.fecha).getDate()) == parseInt(new Date().getDate())||estado.id == 3) ? (<SeguimientoMod idSeguimiento={params.id} idEstado={params.idB} />) : (<h1 className='text-3xl font-bold text-gray-400'>No puedes editar esta asesoría. Si la fecha han pasado, comunícate con el coordinador para volver a activarla.</h1>)}
 
                 </div>
             </div>

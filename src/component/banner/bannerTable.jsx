@@ -96,6 +96,7 @@ function BannerTable() {
                             const currentDate = format(timeNow, 'yyyy-MM-dd', { timeZone: 'America/Bogota' });
                             const startDate = item.fechaInicio;
                             const endDate = item.fechaFin;
+                            console.log(startDate, currentDate, endDate);
                             let trBgClass = item.estado === 0 ? 'bg-slate-100' : '';
                             if (index >= currentPage * 5 && index < (currentPage + 1) * 5) {
                                 return (
@@ -203,10 +204,10 @@ function BannerTable() {
                             Esta acción puede implicar una perdidad irreversible de dicha información, ¿desea continuar?.
                         </p>
                         <div class="mt-4 flex flex-row flex-wrap gap-2 min-w-full items-center content-center justify-center gap-2">
-                            <button type="button" class="min-w-[25%] rounded-lg bg-green-400 px-4 py-2 text-sm font-medium text-white hover:bg-green-500" onClick={() => handleConfirm(true)}>
+                            <button type="button" class="min-w-[25%] rounded-lg bg-green-200 px-4 py-2 text-sm font-medium text-green-600" onClick={() => handleConfirm(true)}>
                                 Confirmar
                             </button>
-                            <button type="button" class="min-w-[25%] rounded-lg bg-red-400 px-4 py-2 text-sm font-medium text-white hover:bg-red-500" onClick={() => handleConfirm(false)}>
+                            <button type="button" class="min-w-[25%] rounded-lg bg-red-200 px-4 py-2 text-sm font-medium text-red-600" onClick={() => handleConfirm(false)}>
                                 Cancelar
                             </button>
                         </div>

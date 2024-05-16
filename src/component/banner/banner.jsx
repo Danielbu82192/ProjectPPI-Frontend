@@ -3,11 +3,11 @@ import React, { useState, useEffect } from "react"
 import { Zoom } from "react-slideshow-image"
 import "react-slideshow-image/dist/styles.css"
 
-const ContentModal = (newContent, newTitle, newImg, type, visible, onClose) => {
+const NewModal = (newContent, newTitle, newImg, visible, onClose) => {
     if (!visible) return null
     return (
         <div className="fixed inset-0 z-10 bg-grey bg-opacity-10 backdrop-blur-sm flex justify-center items-center">
-            <div className="flex flex-col bg-white p-2 rounded-lg max-h-[80vh] w-[70vw] border border-solid border-gray-300">
+            <div className="flex flex-col bg-white p-2 rounded-lg h-[80vh] w-[80vw] border border-solid border-gray-300">
                 <div className="flex flex-row min-w-[100%] max-w-[100%] gap-x-2 justify-between items-start">
                     <h1 className="text-2xl font-bold p-2">{newTitle}</h1>
                     <button className="p-2" onClick={onClose}>
@@ -18,10 +18,8 @@ const ContentModal = (newContent, newTitle, newImg, type, visible, onClose) => {
 
                 </div>
                 <div className='flex flex-col gap-2 overflow-x-auto'>
-                    <div className="flex flex-col min-w-full max-w-full justify-center items-center" >
-                        <div className={`flex ${type === 1 ? 'w-[70%]' : 'w-[40%]'} justify-center items-center`}>
-                            <img src={newImg} alt="" className="w-[78vw] object-cover rounded-lg" />
-                        </div>
+                    <div className="flex w-[100%] justify-center">
+                        <img src={newImg} alt="" className="w-[78vw] object-cover rounded-lg" />
                     </div>
                     <p>{newContent}</p>
                 </div>
@@ -31,25 +29,26 @@ const ContentModal = (newContent, newTitle, newImg, type, visible, onClose) => {
 }
 
 const NewCard = ({ key, newTitle, newContent, newImage }) => {
-    const [showContentModal, setShowContentModal] = useState(false);
-    const handleOnClose = () => setShowContentModal(false);
+    const [showNewModal, setShowNewModal] = useState(false);
+
+    const handleOnClose = () => setShowNewModal(false);
+
     return (
-        <>
-            <div key={key} className="flex flex-col p-2 rounded-lg border border-solid border-gray-300 bg-slate-50 cursor-pointer" onClick={() => setShowContentModal(true)}>
-                <div className="inset-0 bg-cover bg-center min-h-[100px] max-h-[100px] min-w-[200px] max-w-[200px]">
-                    <img className="rounded-lg object-cover max-h-[100%] min-h-[100%] max-w-[100%] min-w-[100%]"
-                        src={newImage} loading="eager" quality={100} alt="" />
-                </div>
-                <h2 className="text-base text-ellipsis text-left overflow-y-auto min-h-[70px] max-h-[70px] min-w-[200px] max-w-[200px] my-2 px-1" style={{
-                    scrollbarColor: "whitegrey white",
-                    scrollbarWidth: "thin",
-                    msScrollbarShadowColor: "whitegrey",
-                    msScrollbarTrackShadowColor: "whitegrey",
-                    msScrollbarTrackColor: "whitegrey",
-                }}>{newTitle}</h2>
+        <div key={key} className="flex flex-col p-2 rounded-lg border border-solid border-gray-300 bg-slate-50">
+            <div className="inset-0 bg-cover bg-center min-h-[100px] max-h-[100px] min-w-[200px] max-w-[200px]">
+                <img className="rounded-lg object-cover max-h-[100%] min-h-[100%] max-w-[100%] min-w-[100%]"
+                    src={newImage} loading="eager" quality={100} alt="" />
             </div>
-            {showContentModal && ContentModal(newContent, newTitle, newImage, 2, showContentModal, handleOnClose)}
-        </>
+            <h2 className="text-base text-ellipsis text-left overflow-y-auto min-h-[70px] max-h-[70px] min-w-[200px] max-w-[200px] my-2 px-1" style={{
+                scrollbarColor: "whitegrey white",
+                scrollbarWidth: "thin",
+                msScrollbarShadowColor: "whitegrey",
+                msScrollbarTrackShadowColor: "whitegrey",
+                msScrollbarTrackColor: "whitegrey",
+            }}>{newTitle}</h2>
+            <button className="text-sm border-t border-gray-200" onClick={() => setShowNewModal(true)}>Ver mas</button>
+            {showNewModal && NewModal(newContent, newTitle, newImage, showNewModal, handleOnClose)}
+        </div>
     )
 };
 
@@ -108,7 +107,7 @@ const SlideBanner = () => {
             return (
                 <>
                     <img src={banners[0].urlImagen} className="object-cover min-w-[100%] rounded-lg" loading="eager" alt="" onClick={() => openModal(banners[0])} />
-                    {selectedBanner && ContentModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, 1, true, closeModal)}
+                    {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, true, closeModal)}
                 </>
             )
         }
@@ -119,7 +118,7 @@ const SlideBanner = () => {
                         <img key={index} src={`http://localhost:3002${banner.urlImagen}`} className="object-cover min-w-[100%]" loading="eager" alt="" onClick={() => openModal(banner)} />
                     ))}
                 </Zoom>
-                {selectedBanner && ContentModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, 1, true, closeModal)}
+                {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, true, closeModal)}
             </>
         );
     } else {
@@ -166,7 +165,7 @@ const SlideNewsCard = () => {
         )
     } else {
         return (
-            <div className="text-center">
+            <div className="">
                 No hay novedades en el momento!
             </div>
         )
