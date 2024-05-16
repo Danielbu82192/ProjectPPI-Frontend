@@ -72,7 +72,7 @@ function Page() {
     }, []);
 
     return (
-        <div className="ml-6 mr-6 mt-6 border bg-white border-b">
+        <div className="ml-2 mr-6 mt-6 border bg-white border-b">
             <div className='pt-8 pb-8 w-full text-center'>
                 <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
                     <div>
@@ -115,7 +115,7 @@ function Page() {
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    Sin nota por ahora
+                                                                    -
                                                                 </>
                                                             )}
                                                             {calificaciones[codigoEquipo].find(item => item.Tipo_Entrega_Descripcion === entrega.nombre).Ubicacion_Entrega ? (
@@ -139,7 +139,7 @@ function Page() {
                                                         </>
                                                     ) : (
                                                         <>
-                                                            0.0
+                                                            -
                                                         </>
                                                     )}
 

@@ -10,6 +10,7 @@ function Page() {
     const [entregaSettings, setEntregaSettings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [entregaByID, setEntregaByID] = useState([]);
+    const [notaAsesoriaDefinitiva, setNotaAsesoriaDefinitiva] = useState(null);
 
     useEffect(() => {
         moment.locale('es');
@@ -22,6 +23,9 @@ function Page() {
                 if (response.ok) {
                     const data = await response.json();
                     setEquipoUsuarios(data);
+                    const notaAsesoriaDefinitiva = data.length > 0 ? data[0].Nota_Asesoria_Definitiva_Individual : null;
+                    setNotaAsesoriaDefinitiva(notaAsesoriaDefinitiva); // Asignar el valor aquí
+                    console.log("Nota Asesoría Definitiva Individual:", notaAsesoriaDefinitiva);
                 } else {
                     setEquipoUsuarios([]);
                 }
@@ -86,7 +90,15 @@ function Page() {
                 const codigoEquipo = equipoUsuarios[0].Codigo_Equipo;
                 const response = await fetch(`https://td-g-production.up.railway.app/entrega-equipo-ppi/GetPPIEntregaByID/${codigoEquipo}`);
                 if (response.ok) {
-                    const data = await response.json();
+                    let data = await response.json();
+                    // Si la entrega de Asesorías no está presente, la agregamos al arreglo
+                    if (!data.find(entrega => entrega.Tipo_Entrega_Descripcion === "Asesorías")) {
+                        const notaAsesoriaDefinitivaEntrega = {
+                            Tipo_Entrega_Descripcion: "Asesorías",
+                            Calificacion_Entrega: notaAsesoriaDefinitiva
+                        };
+                        data = [...data, notaAsesoriaDefinitivaEntrega];
+                    }
                     setEntregaByID(data);
                 } else {
                     setEntregaByID([]);
@@ -99,20 +111,26 @@ function Page() {
         if (equipoUsuarios.length > 0) {
             fetchEntregaByID();
         }
-    }, [equipoUsuarios]);
+    }, [equipoUsuarios, notaAsesoriaDefinitiva]);
 
     const isEntregado = (nombreEntrega) => {
         return entregaByID.some(entrega => entrega.Tipo_Entrega_Descripcion === nombreEntrega);
     };
 
     const sumaMultiplicaciones = entregaSettings.reduce((accumulator, setting) => {
-        const calificacion = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Calificacion_Entrega;
+        let calificacion;
+        if (setting.nombre === "Asesorías") {
+            calificacion = notaAsesoriaDefinitiva;
+        } else {
+            calificacion = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Calificacion_Entrega;
+        }
         if (calificacion !== undefined) {
             const porcentajeDecimal = setting.porcentaje / 100;
             accumulator += calificacion * porcentajeDecimal;
         }
         return accumulator;
     }, 0);
+
 
     const getIconoCalificacion = (calificacion) => {
         if (calificacion && calificacion !== '-') {
@@ -125,6 +143,15 @@ function Page() {
                 </svg>;
         } else {
             return null;
+        }
+    };
+
+    const getCalificacion = (nombreEntrega) => {
+        if (nombreEntrega === "Asesorías") {
+            return notaAsesoriaDefinitiva !== null ? notaAsesoriaDefinitiva : '-';
+        } else {
+            const entrega = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === nombreEntrega);
+            return entrega ? (entrega.Calificacion_Entrega !== null ? entrega.Calificacion_Entrega : '-') : '-';
         }
     };
 
@@ -188,10 +215,10 @@ function Page() {
                                                         <td>{setting.nombre}</td>
                                                         <td>{setting.porcentaje}%</td>
                                                         <td className="calificacion-container">
-                                                            {getIconoCalificacion(entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Calificacion_Entrega)}
+                                                            {getIconoCalificacion(getCalificacion(setting.nombre))}
                                                             {' '}
                                                             <span>
-                                                                {entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Calificacion_Entrega || '-'}
+                                                                {getCalificacion(setting.nombre)}
                                                             </span>
                                                         </td>
                                                     </tr>
