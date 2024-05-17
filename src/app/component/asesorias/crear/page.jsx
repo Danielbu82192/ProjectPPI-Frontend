@@ -96,10 +96,10 @@ function page() {
         <div className="ml-6 mr-6 mt-6 border   bg-white border-b flex justify-between">
             <div className='pt-8  pb-8 w-full'>
                 <div className='  h-22 pb-2 flex-col  border-b-2 flex justify-between items-center'>
-                    <div>
+                    <div className='text-center'>
                         <h1 className='ml-5 text-4xl font-bold text-gray-600'>Crear citas de asesorías</h1>
                     </div>
-                    <div className='text-gray-600 h-10'>
+                    <div className='text-gray-600 text-center h-14 sm:h-10 '>
                         {!horasPendientes ? (
                             <div className="text-xl sm:mt-2">
                                 <span className='font-semibold'>Semana {semanaSeleccionada.numeroSemana}, {monthName.charAt(0).toUpperCase() + monthName.slice(1)} {dia}</span>, Citas pendientes <span className='bg-green-500 rounded-xl text-white py-1 px-2'>0</span>

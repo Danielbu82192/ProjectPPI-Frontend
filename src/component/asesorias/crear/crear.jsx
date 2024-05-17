@@ -30,6 +30,7 @@ function crear() {
     const [citasPendientes, setCitasPendientes] = useState([])
     const [horasPendientes, setHorasPendientes] = useState('');
     const [diasConst, setDiasConst] = useState(['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'])
+    const [siguienteSemana, setSiguienteSemana] = useState([])
     const diasSemana = {
         'Lunes': 1,
         'Martes': 2,
@@ -41,7 +42,7 @@ function crear() {
     };
 
     const calcularNumeroDiaLunes = () => {
-        const fecha = fechaPruebas;
+        const fecha = new Date(fechaPruebas);
         let diaSemanas = fecha.getDay();
         const numeroDia = fecha.getDate();
         if (fecha.getHours() >= 18) diaSemanas = diaSemanas + 1
@@ -55,15 +56,16 @@ function crear() {
         setHorasTarde([]);
         setHorasNoche([]);
         setDiaCreacion(dia[1]);
-        const numeroDia = diasSemana[dia[0]];
-        const fechaActual = fechaPruebas;
+        const numeroDia = dia[1];
+        const fechaActual = new Date(fechaPruebas);
         /* fechaActual.setDate(22)
          fechaActual.setHours(3);
          fechaActual.setMinutes(0);
          fechaActual.setSeconds(0);
          fechaActual.setMilliseconds(0);*/
         let hora = 0;
-        if (numeroDia == fechaActual.getDay()) {
+        //888
+        if (numeroDia == fechaActual.getDate()) {
             hora = fechaActual.getHours()
             if (hora >= 1 && hora <= 2) {
                 hora = 6
@@ -74,6 +76,7 @@ function crear() {
         } else {
             hora = 6;
         }
+
         for (let i = hora; i <= 21; i++) {
             if (i < 12) {
                 const dato = [`${i}:00`, `${i}:20`, `${i}:40`]
@@ -101,6 +104,13 @@ function crear() {
                 setDiaNumero(prevState => [...prevState, item + ' ' + (diaLunes + index)])
             }
         });
+        if (fechaPruebas.getDay() >= 4) {
+            setSiguienteSemana([])
+            let dia = ((7 - fechaPruebas.getDay()) + fechaPruebas.getDate() + 1)
+            for (let index = 0; index < diasConst.length; index++) {
+                setSiguienteSemana(prevState => [...prevState, diasConst[index] + ' ' + (dia + index)])
+            }
+        }
     }, [diaLunes, diasConst, diaSemana]);
 
     useEffect(() => {
@@ -141,12 +151,12 @@ function crear() {
     }
 
     const validarHoras = async (cantHoras) => {
-        const response = await fetch('http://localhost:3002/hora-semanal/profesor/1');
+        const response = await fetch('http://localhost:3002/hora-semanal/profesor/' + usuarioActual.id);
         const data = await response.json();
         if (response.ok) {
             const horasAsignadas = data[0].horasAsignadas;
             const CantidadAsesorias = horasAsignadas * 4;
-            const fechaActual = fechaPruebas;
+            const fechaActual = new Date(fechaPruebas);
             //fechaActual.setDate(22)
             const fechaLunes = new Date(fechaActual);
             fechaLunes.setDate(diaLunes)
@@ -155,7 +165,7 @@ function crear() {
             fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7)); // Establece la fecha al próximo lunes
             const fechaInicio = fechaLunes.toISOString().split('T')[0];
             const fechaFin = fechaSabado.toISOString().split('T')[0];
-            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/1`);
+            const response2 = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/` + usuarioActual.id);
             const data2 = await response2.json();
             if (response2.ok) {
                 const asesoriasActual = data2.length + cantHoras;
@@ -168,7 +178,7 @@ function crear() {
     }
 
     const crearCitas = async () => {
-        const fecha = fechaPruebas
+        const fecha = new Date(fechaPruebas)
         //fechaActual.setDate(22)
         let estado = false;
         fecha.setDate(diaCreacion)
@@ -241,12 +251,15 @@ function crear() {
         return formattedTime.replace(/^0(\d)/, '$1');
     }
     const buscarCitas = async (dia) => {
-        const fechaActual = fechaPruebas;
+        const fechaActual = new Date(fechaPruebas);
         //fechaActual.setDate(22)
         const fechaLunes = new Date(fechaActual);
         const fechaSabado = new Date(fechaActual); // Clona la fecha actual
         fechaLunes.setDate(fechaActual.getDate() - fechaActual.getDay() + 1);
         fechaSabado.setDate(fechaActual.getDate() - (fechaActual.getDay() - 7));
+        if (fechaPruebas.getDay() >= 4) {
+            fechaSabado.setDate(fechaSabado.getDate() + 7)
+        }
         const fechaInicio = format(fechaLunes, "MM-dd-yyyy");
         const fechaFin = format(fechaSabado, "MM-dd-yyyy");
         const response = await fetch(`http://localhost:3002/citas-asesoria-ppi/${fechaInicio}/${fechaFin}/${usuarioActual.id}`);
@@ -256,13 +269,13 @@ function crear() {
             data.map((item) => {
                 const fecha = new Date(item.fecha)
                 if (fecha.getDate() == dia[1]) {
-                    const fecha = fechaPruebas;
+                    const fecha = new Date(fechaPruebas);
                     /*fecha.setDate(22)
                     fecha.setHours(3);
                     fecha.setMinutes(0);
                     fecha.setSeconds(0);
                     fecha.setMilliseconds(0);*/
-                    const fechaHoyForma = format(new Date, 'dd/MM/yyyy');
+                    const fechaHoyForma = format(fechaPruebas, 'dd/MM/yyyy');
                     const fechaCitaForma = format(item.fecha, 'dd/MM/yyyy');
                     if (parseInt(item.hora.split(":")[0]) >= fecha.getHours() + 4 || fechaHoyForma != fechaCitaForma) {
                         const horas = formatTime(item.hora);
@@ -299,7 +312,7 @@ function crear() {
                 "dateTime": `${item.hora.split(':')[0]}:${item.hora.split(':')[1]}:00`,
                 "attendees": estudiant,
                 "conferenceDataVersion": Tcita.toString()
-            }; 
+            };
             console.log(dataCrearMeet)
             const requestOptionsMEET = {
                 method: 'POST',
@@ -310,7 +323,7 @@ function crear() {
             if (!responseMeet.ok) {
                 setShowError(true)
                 return
-            } 
+            }
             const dataMeet = await responseMeet.json()
             let linCita = dataMeet.htmlLink
             if (dataMeet.meetLink != null) {
@@ -349,7 +362,7 @@ function crear() {
                     const name = "estudiante" + (index + 1);
                     datosSeguimiento[name] = element.id
                 });
- 
+
                 const requestOptionsSeguimiento = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -362,7 +375,7 @@ function crear() {
                 }
             } else {
                 setShowAlert(true)
-            } 
+            }
         })
     }
 
@@ -378,7 +391,7 @@ function crear() {
     useEffect(() => {
         calcularNumeroDiaLunes();
         const citasPendientes = async () => {
-            const fechaActual = fechaPruebas;
+            const fechaActual = new Date(fechaPruebas);
             const usuarioNest = localStorage.getItem('U2FsdGVkX1');
             const bytes = CryptoJS.AES.decrypt(usuarioNest, 'PPIITYTPIJC');
             const usuarioN = JSON.parse(bytes.toString(CryptoJS.enc.Utf8))
@@ -481,19 +494,32 @@ function crear() {
                     </div>
                     <div className='pt-8'>
                         <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona el día de la cita:</h1>
-                        <div class="justify-center flex pt-8">
-                            <div className='grid grid-cols-1 pl-14 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3   xl:flex gap-4'>
-                                {
-                                    diasNumero.map((item, index) => (
-                                        <div key={item} className='px-2 py-4'>
-                                            <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
-                                            <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500
-            py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200"> {item} </label>
-                                        </div>
-                                    ))
-                                }
+                        <div className="grid text-center pt-8 items-center">
+                            <div className="grid grid-cols-1 sm:pl-14 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:flex gap-5 justify-center">
+                                {/* Primer conjunto de días de la semana */}
+                                {diasNumero.map((item, index) => (
+                                    <div key={item} className="px-2 py-4">
+                                        <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
+                                        <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500 py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200">
+                                            {item}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-1 sm:pl-14 sm:grid-cols-2 mt-5 md:grid-cols-2 lg:grid-cols-3 xl:flex gap-5 justify-center">
+                                {/* Segundo conjunto de días de la semana */}
+                                {siguienteSemana.map((item, index) => (
+                                    <div key={item} className="px-2 py-4">
+                                        <input onChange={(e) => cambiaDia(item, index)} type="radio" id={item} name="dia-semana" className="peer hidden" />
+                                        <label htmlFor={item} className="select-none cursor-pointer rounded-lg border-2 border-blue-500 py-3 px-6 font-bold text-blue-500 transition-colors duration-200 ease-in-out peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-200">
+                                            {item}
+                                        </label>
+                                    </div>
+                                ))}
                             </div>
                         </div>
+
+
                     </div>
                     <div className='pt-8'>
                         <h1 className='text-3xl font-bold text-center text-gray-600'>Selecciona la hora de la cita:</h1>
