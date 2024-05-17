@@ -70,7 +70,7 @@ export default function asesor() {
             <div className='px-5 grid xl:grid-cols-3 lg:grid-cols-3 sm:grid-cols-3  grid-cols-1 items-center cursor-pointer border-2 my-2 border-gray-300 rounded-lg shadow-md hover:shadow-lg p-4 '>
               <div className='mb-4  sm:mb-0 sm:mr-4'>
                 <span className='text-xl font-bold text-gray-600'>
-                  Grupo:
+                  Equipo:
                 </span>
                 <span className='ml-2 text-xl font-semibold text-gray-400'>
                   {item.codigoEquipo}
