@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import "./page.css"
+import dynamic from 'next/dynamic';
 
 function Page() {
     const [entregas, setEntregas] = useState([]);
@@ -10,7 +11,7 @@ function Page() {
     const [teamMembers, setTeamMembers] = useState({});
     const [calificaciones, setCalificaciones] = useState({});
     const [notasDefinitivas, setNotasDefinitivas] = useState({});
-
+    const ReactHTMLTableToExcel = dynamic(() => import('react-html-table-to-excel'), { ssr: false });
     useEffect(() => {
         const fetchEntregas = async () => {
             try {
@@ -79,7 +80,7 @@ function Page() {
                 setNotasDefinitivas(notasDefinitivas);
 
                 if (window.innerWidth <= 768) {
-                    alert("Para visualizar esta tabla de notas en móvil, tendrás que desplazarte de manera horizontal dentro de la tabla. Te recomendamos visitar esta sección desde un computador para mayor comodidad");
+                    alert("Para visualizar esta tabla de notas en móvil, tendrás que desplazarte de manera horizontal dentro de la tabla. Te recomendamos visitar esta sección desde un computador para mayor comodidad.");
                 }
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -89,6 +90,20 @@ function Page() {
         fetchEntregas();
         fetchEquipos();
     }, []);
+
+    const porcentajeAsesorias = entregas.find(entrega => entrega.nombre === "Asesorías")?.Porcentaje_Entrega || 0;
+    const currentYear = new Date().getFullYear(); // Obtener el año actual
+    const currentMonth = new Date().getMonth() + 1; // Obtener el mes actual (1-12)
+
+    // Determinar el número después del año
+    let semester;
+    if (currentMonth >= 1 && currentMonth <= 6) {
+        semester = 1;
+    } else {
+        semester = 2;
+    }
+
+    const fileName = `Notas PPI ${currentYear} - ${semester}`; // Crear el nombre del archivo con el año y el número del semestre
 
     return (
         <div className="ml-2 mr-6 mt-6 border bg-white border-b">
@@ -102,17 +117,27 @@ function Page() {
                 <div className="p-4">
                     <p style={{ textAlign: 'justify' }}>En esta ventana puedes visualizar todas las notas de todos los equipos del Proyecto Pedagógico Integrador (PPI) de este semestre. Las notas presentadas son de carácter grupal, a excepción de las asesorías y la nota definitiva, las cuales se muestran por estudiante. Cada nota está acompañada por un ícono de descarga, que te permite obtener una entrega específica de un equipo en formato descargable. Explora las calificaciones y descarga los documentos necesarios para un seguimiento detallado del progreso académico.</p>
                 </div>
+                <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    <ReactHTMLTableToExcel // Agregar el componente de exportación
+                        id="test-table-xls-button"
+                        className="download-table-xls-button"
+                        table="tabla-notas"
+                        filename={fileName}
+                        sheet={fileName}
+                        buttonText="Exportar a Excel"
+                    />
+                </button>
                 <div className='p-4'>
                     <div className="table-wrapper overflow-x-auto table-responsive">
                         <div className="table-scroll">
-                            <table className="min-w-full min-h-full bg-white shadow-md rounded">
+                            <table id="tabla-notas" className="min-w-full min-h-full bg-white shadow-md rounded">
                                 <thead>
                                     <tr className="bg-gray-200">
                                         <th className="border border-gray-300 px-2 py-1">Equipo</th>
                                         {entregas.filter(entrega => entrega.nombre !== "Asesorías").map(entrega => (
-                                            <th key={entrega.id} className="border border-gray-300 px-2 py-1.5 w-38">{entrega.nombre}</th>
+                                            <th key={entrega.id} className="border border-gray-300 px-2 py-1.5 w-38">{entrega.nombre} ({entrega.Porcentaje_Entrega}%)</th>
                                         ))}
-                                        <th className="border border-gray-300 px-2 py-1 w-38">Asesorías</th>
+                                        <th className="border border-gray-300 px-2 py-1 w-38">Asesorías ({porcentajeAsesorias}%)</th>
                                         <th className="border border-gray-300 px-2 py-1 w-38">Nota Definitiva PPI</th> {/* Nueva columna */}
                                     </tr>
                                 </thead>
@@ -178,6 +203,7 @@ function Page() {
                                                     const studentData = equiposConNotas[codigoEquipo].find(student => student.nombreEstudiante === member);
                                                     return (
                                                         <div key={idx} className="border border-gray-300 px-4 py-2 w-38">
+                                                            {idx === 0 && <br />}
                                                             <span>{studentData && !isNaN(studentData.notaAsesoria) ? parseFloat(studentData.notaAsesoria).toFixed(1) : "-"}</span>
                                                         </div>
                                                     );
@@ -203,10 +229,10 @@ function Page() {
                                                         }
                                                     }
 
-
                                                     // Mostrar la nota definitiva PPI para el estudiante
                                                     return (
                                                         <div key={idx} className="border border-gray-300 px-4 py-2 w-38">
+                                                            {idx === 0 && <br />}
                                                             {isNaN(notaDefinitivaPPI) ? "-" : notaDefinitivaPPI.toFixed(1)}
                                                         </div>
                                                     );

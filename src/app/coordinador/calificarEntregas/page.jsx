@@ -259,6 +259,8 @@ function Page() {
                                         onClick={() => {
                                             const dataToSend = [];
 
+                                            let valid = true; // Variable para controlar si las calificaciones son válidas
+
                                             [...equipos].forEach(equipo => {
                                                 ppiEntregaSOL.forEach(entrega => {
                                                     const entregaEquipo = entregasMap.get(equipo);
@@ -266,37 +268,53 @@ function Page() {
                                                         const entregaEnEquipo = entregaEquipo.find(entregaEquipo => entregaEquipo.Tipo_Entrega_Descripcion === entrega.Tipo_Entrega_Descripcion && entregaEquipo.Entrega_Equipo_PPI_ID !== null);
                                                         if (entregaEnEquipo) {
                                                             const calificacion = calificaciones.get(`${equipo}-${entrega.Tipo_Entrega_ID}`);
-                                                            dataToSend.push({
-                                                                Entrega_Equipo_PPI_ID: entregaEnEquipo.Entrega_Equipo_PPI_ID,
-                                                                Calificacion: calificacion !== '' ? parseFloat(calificacion) : null
-                                                            });
+
+                                                            // Validación de la calificación
+                                                            if (calificacion !== '') {
+                                                                const parsedCalificacion = parseFloat(calificacion);
+                                                                if (parsedCalificacion >= 0 && parsedCalificacion <= 5) {
+                                                                    dataToSend.push({
+                                                                        Entrega_Equipo_PPI_ID: entregaEnEquipo.Entrega_Equipo_PPI_ID,
+                                                                        Calificacion: parsedCalificacion
+                                                                    });
+                                                                } else {
+                                                                    // Si la calificación está fuera del rango, marcamos como inválido y mostramos un mensaje
+                                                                    valid = false;
+                                                                    alert('Por favor, asegúrate de que todas las calificaciones estén entre 0 y 5.');
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 });
                                             });
 
-                                            fetch('https://td-g-production.up.railway.app/entrega-equipo-ppi/updateScores', {
-                                                method: 'POST',
-                                                headers: {
-                                                    'Content-Type': 'application/json'
-                                                },
-                                                body: JSON.stringify(dataToSend)
-                                            })
-                                                .then(response => {
-                                                    if (response.ok) {
-                                                        alert('Calificaciones actualizadas correctamente.');
-                                                        window.location.reload();
-                                                    } else {
-                                                        console.error('Error al enviar los datos al backend:', response.statusText);
-                                                    }
+                                            if (valid) {
+                                                // Si todas las calificaciones son válidas, realizamos la solicitud fetch
+                                                fetch('https://td-g-production.up.railway.app/entrega-equipo-ppi/updateScores', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify(dataToSend)
                                                 })
-                                                .catch(error => {
-                                                    console.error('Error al enviar los datos al backend:', error);
-                                                });
+                                                    .then(response => {
+                                                        if (response.ok) {
+                                                            alert('Calificaciones actualizadas correctamente.');
+                                                            window.location.reload();
+                                                        } else {
+                                                            console.error('Error al enviar los datos al backend:', response.statusText);
+                                                        }
+                                                    })
+                                                    .catch(error => {
+                                                        console.error('Error al enviar los datos al backend:', error);
+                                                    });
+                                            }
                                         }}
                                     >
                                         Guardar Notas
                                     </button>
+
+
                                 </div>
                             )}
                         </div>
