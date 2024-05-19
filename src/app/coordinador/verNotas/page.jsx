@@ -114,9 +114,6 @@ function Page() {
                     </div>
                 </div>
                 <br />
-                <div className="p-4">
-                    <p style={{ textAlign: 'justify' }}>En esta ventana puedes visualizar todas las notas de todos los equipos del Proyecto Pedagógico Integrador (PPI) de este semestre. Las notas presentadas son de carácter grupal, a excepción de las asesorías y la nota definitiva, las cuales se muestran por estudiante. Cada nota está acompañada por un ícono de descarga, que te permite obtener una entrega específica de un equipo en formato descargable. Explora las calificaciones y descarga los documentos necesarios para un seguimiento detallado del progreso académico.</p>
-                </div>
                 <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                     <ReactHTMLTableToExcel // Agregar el componente de exportación
                         id="test-table-xls-button"

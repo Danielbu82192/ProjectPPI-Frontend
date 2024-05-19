@@ -19,7 +19,7 @@ function Page() {
     useEffect(() => {
         const fetchEquipoUsuarios = async () => {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/57661');
+                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/61566');
                 if (response.ok) {
                     const data = await response.json();
                     setEquipoUsuarios(data);
@@ -131,7 +131,6 @@ function Page() {
         return accumulator;
     }, 0);
 
-
     const getIconoCalificacion = (calificacion) => {
         if (calificacion && calificacion !== '-') {
             return calificacion < 3 ?
@@ -155,15 +154,20 @@ function Page() {
         }
     };
 
+    const codigoEquipo = equipoUsuarios.length > 0 ? equipoUsuarios[0].Codigo_Equipo : 'N/A';
+    const aliasProyecto = bitacora.length > 0 ? bitacora[0].Alias_Proyecto : 'N/A';
+
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b flex justify-between">
             <div className='pt-8 pb-8 w-full text-center'>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
+                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-5 pb-5 pr-5 flex justify-between items-center'>
                     <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Ver Notas</h1>
+                        <h1 className='text-4xl font-bold text-gray-600'>
+                            Notas: Equipo {codigoEquipo} - {aliasProyecto}
+                        </h1>
                     </div>
                 </div>
-                <div className='p-10'>
+                <div className='p-5'>
                     {loading ? (
                         <p>Cargando...</p>
                     ) : (
@@ -176,21 +180,6 @@ function Page() {
                                         <p>No tienes bitácora todavía.</p>
                                     ) : (
                                         <div>
-                                            {equipoUsuarios.map(usuario => (
-                                                <h2 className="text-lg font-medium text-gray-700" key={usuario.Codigo_Equipo}>Equipo {usuario.Codigo_Equipo}</h2>
-                                            ))}
-                                            <br />
-                                            <ul>
-                                                {bitacora.map(item => (
-                                                    <li key={item.Codigo_Equipo}>
-                                                        <p>Alias: {item.Alias_Proyecto}</p>
-                                                        <p>Descripción: {item.Descripcion_Proyecto}</p>
-                                                        <p>Alcance: {item.Alcance_Proyecto}</p>
-                                                        <p>Alcance Socialización 1: {item.Alcance_Socializacion_Uno}</p>
-                                                        <p>Alcance Socialización 2: {item.Alcance_Socializacion_Dos}</p>
-                                                    </li>
-                                                ))}
-                                            </ul>
                                         </div>
                                     )}
                                 </div>

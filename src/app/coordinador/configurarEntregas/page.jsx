@@ -195,7 +195,7 @@ function Page() {
                 </div>
                 <div className='p-10'>
                     <div className="mt-5">
-                        <p>A continuación, podrás configurar cada una de las entregas del semestre en curso. Para obtener más información de cada columna, pon el cursor encima de cada título. Revisa que todo esté como quieres y una vez que todas las entregas tengan la configuración que quieres, haz click en el botón &quot;Guardar Entregas&quot;.</p><br></br>
+                        <p>A continuación, configura las entregas del semestre. Para más información sobre cada columna, pon el cursor sobre el título. Revisa y, una vez listo, haz clic en Guardar Entregas.</p><br></br>
                         <div className="table-container">
                             <table className="table">
                                 <thead>

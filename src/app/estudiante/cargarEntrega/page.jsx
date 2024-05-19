@@ -13,6 +13,32 @@ function Page() {
     const [loading, setLoading] = useState(true);
     const [selectedFiles, setSelectedFiles] = useState({});
     const [entregaByID, setEntregaByID] = useState([]);
+    const [showLoadingModal, setShowLoadingModal] = useState(false);
+    const [isMobile, setIsMobile] = useState(false); // Variable para determinar si es móvil
+
+    useEffect(() => {
+        // Función para verificar si el ancho de la ventana indica un dispositivo móvil
+        const checkIsMobile = () => {
+            setIsMobile(window.innerWidth <= 768); // Establece isMobile como verdadero si el ancho de la ventana es menor o igual a 768 (valor para dispositivos móviles)
+        };
+
+        // Verificar inicialmente si es móvil
+        checkIsMobile();
+
+        // Agregar un event listener para cambiar la variable isMobile cuando el tamaño de la ventana cambie
+        window.addEventListener('resize', checkIsMobile);
+
+        // Retirar el event listener cuando el componente se desmonte para evitar memory leaks
+        return () => window.removeEventListener('resize', checkIsMobile);
+    }, []);
+
+    const openLoadingModal = () => {
+        setShowLoadingModal(true);
+    };
+
+    const closeLoadingModal = () => {
+        setShowLoadingModal(false);
+    };
 
     useEffect(() => {
         moment.locale('es');
@@ -21,7 +47,7 @@ function Page() {
     useEffect(() => {
         const fetchEquipoUsuarios = async () => {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/57661');
+                const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetGroupById/61566');
                 if (response.ok) {
                     const data = await response.json();
                     setEquipoUsuarios(data);
@@ -138,6 +164,7 @@ function Page() {
                 default:
                     throw new Error('El código de equipo no es válido.');
             }
+            openLoadingModal();
             await createFolderInS3(`${rutaDestinoS3}${codigoEquipo}`);
             const fileName = selectedFiles[entregaId].name;
             const fileExtension = fileName.split('.').pop();
@@ -147,12 +174,14 @@ function Page() {
                 bitacoraPpiId,
                 configuracionEntregaId,
             });
+            closeLoadingModal();
             alert(
-                "¡Archivo subido exitosamente para su calificación!"
+                "¡Archivo cargado exitosamente!"
             );
             location.reload();
         } catch (error) {
             console.error('Error en la carga de archivos:', error);
+            closeLoadingModal();
         }
     };
 
@@ -171,19 +200,27 @@ function Page() {
         }
     };
 
-    const getStatusStyle = (status) => {
-        return status === 'A Tiempo' ? 'green' : 'red';
+    const getStatusStyle = (status, isDelivered) => {
+        if (isDelivered) {
+            return 'status-blue'; // Clase CSS para fondo azul
+        }
+        return status === 'A Tiempo' ? 'status-green' : 'status-red';
     };
+
+    const equipoCodigo = equipoUsuarios.length > 0 ? equipoUsuarios[0].Codigo_Equipo : '';
+    const aliasProyecto = bitacora.length > 0 ? bitacora[0].Alias_Proyecto : '';
 
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b flex justify-between">
             <div className='pt-8 pb-8 w-full text-center'>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
+                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-5 pb-5 pr-5 flex justify-between items-center'>
                     <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Cargar Entregas</h1>
+                        <h1 className={`text-4xl font-bold text-gray-600 md:text-left ${isMobile && 'text-center-mobile'}`}>
+                            Entregas: {equipoCodigo && `Equipo ${equipoCodigo}`} {aliasProyecto && `- ${aliasProyecto}`}
+                        </h1>
                     </div>
                 </div>
-                <div className='p-10'>
+                <div className='p-5'>
                     {loading ? (
                         <p>Cargando...</p>
                     ) : (
@@ -196,20 +233,8 @@ function Page() {
                                         <p>No tienes bitácora todavía.</p>
                                     ) : (
                                         <div>
-                                            {equipoUsuarios.map(usuario => (
-                                                <h2 className="text-lg font-medium text-gray-700" key={usuario.Codigo_Equipo}>Equipo {usuario.Codigo_Equipo}</h2>
-                                            ))}
-                                            <br />
                                             <ul>
-                                                {bitacora.map(item => (
-                                                    <li key={item.Codigo_Equipo}>
-                                                        <p>Alias: {item.Alias_Proyecto}</p>
-                                                        <p>Descripción: {item.Descripcion_Proyecto}</p>
-                                                        <p>Alcance: {item.Alcance_Proyecto}</p>
-                                                        <p>Alcance Socialización 1: {item.Alcance_Socializacion_Uno}</p>
-                                                        <p>Alcance Socialización 2: {item.Alcance_Socializacion_Dos}</p>
-                                                    </li>
-                                                ))}
+
                                             </ul>
                                         </div>
                                     )}
@@ -221,58 +246,72 @@ function Page() {
                                 ) : (
                                     <div>
                                         <br />
-                                        <table>
-                                            <thead>
-                                                <tr>
-                                                    <th>Nombre</th>
-                                                    <th>Porcentaje</th>
-                                                    <th>Fecha de Entrega</th>
-                                                    <th>Estado</th>
-                                                    <th>Adjuntos</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {entregaSettings.map(setting => (
-                                                    <tr key={setting.id}>
-                                                        <td>{setting.nombre}</td>
-                                                        <td>{setting.porcentaje}</td>
-                                                        <td>{formatDate(setting.fechaentrega)}</td>
-                                                        <td className={`status-${getStatusStyle(determineStatus(setting.fechaentrega))}`}>
-                                                            {entregaByID.some(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre) ? <span className="status-blue">Entregado</span> : determineStatus(setting.fechaentrega)}
-                                                        </td>
-
-                                                        <td className="text-center">
-                                                            {isEntregado(setting.nombre) ? (
-                                                                <button onClick={() => {
-                                                                    const ubicacion = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Ubicacion_Entrega;
-                                                                    if (ubicacion) {
-                                                                        window.location.href = ubicacion;
-                                                                    } else {
-                                                                        alert("Esta entrega no tiene un archivo adjunto.");
-                                                                    }
-                                                                }}>
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#000000" fill="none">
-                                                                        <path d="M17.4776 9.01106C17.485 9.01102 17.4925 9.01101 17.5 9.01101C19.9853 9.01101 22 11.0294 22 13.5193C22 15.8398 20.25 17.7508 18 18M17.4776 9.01106C17.4924 8.84606 17.5 8.67896 17.5 8.51009C17.5 5.46695 15.0376 3 12 3C9.12324 3 6.76233 5.21267 6.52042 8.03192M17.4776 9.01106C17.3753 10.1476 16.9286 11.1846 16.2428 12.0165M6.52042 8.03192C3.98398 8.27373 2 10.4139 2 13.0183C2 15.4417 3.71776 17.4632 6 17.9273M6.52042 8.03192C6.67826 8.01687 6.83823 8.00917 7 8.00917C8.12582 8.00917 9.16474 8.38194 10.0005 9.01101" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                        <path d="M12 21L12 13M12 21C11.2998 21 9.99153 19.0057 9.5 18.5M12 21C12.7002 21 14.0085 19.0057 14.5 18.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    </svg>
-                                                                </button>
-                                                            ) : (
-                                                                determineStatus(setting.fechaentrega) !== 'Plazo Vencido' && (
-                                                                    <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file" onChange={(event) => handleFileChange(event, setting.id, setting.nombre)} acceptLanguage="es" />
-                                                                )
-                                                            )}
-                                                        </td>
-
-
-                                                        <td>
-                                                            {determineStatus(setting.fechaentrega) === 'A Tiempo' && !entregaByID.some(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre) && (
-                                                                <button className="upload-button" onClick={() => { handleFileUpload(setting.id, setting.nombre, setting.configuracionEntregaId, bitacora[0].Bitacora_PPI_ID); }}>Cargar</button>
-                                                            )}
-                                                        </td>
+                                        <div className="table-responsive">
+                                            <table>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Nombre</th>
+                                                        <th>Porcentaje</th>
+                                                        <th>Plazo</th>
+                                                        <th>Estado</th>
+                                                        <th className="table-header-adjuntos">Adjuntos</th>
+                                                        <th className="table-header-accion">Acción</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {entregaSettings.map(setting => {
+                                                        const status = determineStatus(setting.fechaentrega);
+                                                        const isDelivered = isEntregado(setting.nombre);
+                                                        return (
+                                                            <tr key={setting.id}>
+                                                                <td
+                                                                    data-label="Nombre"
+                                                                    onClick={() => {
+                                                                        const ubicacion = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Ubicacion_Entrega;
+                                                                        if (ubicacion) {
+                                                                            window.location.href = ubicacion;
+                                                                        } else {
+                                                                            alert("Esta entrega no tiene un archivo adjunto.");
+                                                                        }
+                                                                    }}
+                                                                    className="link-green"
+                                                                >
+                                                                    {setting.nombre}
+                                                                </td>
+                                                                <td data-label="Porcentaje">{setting.porcentaje}</td>
+                                                                <td data-label="Plazo">{formatDate(setting.fechaentrega)}</td>
+                                                                <td data-label="Estado" className={getStatusStyle(status, isDelivered)}>
+                                                                    {isDelivered ? <span>Entregado</span> : status}
+                                                                </td>
+                                                                {status !== 'Plazo Vencido' && (
+                                                                    <>
+                                                                        <td data-label="Adjuntos" className="text-center">
+                                                                            {isDelivered ? (
+                                                                                <div>
+                                                                                    {status === 'A Tiempo' && (
+                                                                                        <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file" onChange={(event) => handleFileChange(event, setting.id, setting.nombre)} acceptLanguage="es" />
+                                                                                    )}
+                                                                                </div>
+                                                                            ) : (
+                                                                                status !== 'Plazo Vencido' && (
+                                                                                    <input className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" type="file" onChange={(event) => handleFileChange(event, setting.id, setting.nombre)} acceptLanguage="es" />
+                                                                                )
+                                                                            )}
+                                                                        </td>
+                                                                        <td data-label="Acción">
+                                                                            {(status === 'A Tiempo' || isDelivered) && (
+                                                                                <button className="upload-button" onClick={() => handleFileUpload(setting.id, setting.nombre, setting.configuracionEntregaId, bitacora[0].Bitacora_PPI_ID)}>Cargar</button>
+                                                                            )}
+                                                                        </td>
+                                                                    </>
+                                                                )}
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+
                                     </div>
                                 )}
                             </div>
@@ -280,6 +319,15 @@ function Page() {
                     )}
                 </div>
             </div>
+            {showLoadingModal && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <div className="modal-content">
+                            <p>Subiendo archivo...</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

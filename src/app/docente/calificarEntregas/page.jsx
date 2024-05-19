@@ -68,7 +68,7 @@ function Page() {
     useEffect(() => {
         async function fetchAsignaturas() {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/57642');
+                const response = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/61560');
                 if (response.ok) {
                     const data = await response.json();
                     setAsignaturas(data);

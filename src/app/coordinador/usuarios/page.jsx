@@ -1,12 +1,10 @@
 "use client"
 import React, { useState } from 'react';
 import ExcelUploader from './ExcelUploader';
-import CargaExcel from './CargaExcel';
 
 function Page() {
     const [cargaExitosa, setCargaExitosa] = useState(false);
     const [mostrarBoton, setMostrarBoton] = useState(false);
-    const [mostrarBotonDos, setMostrarBotonDos] = useState(false);
 
     const handleCargarUsuarios = () => {
         setCargaExitosa(true);
@@ -16,44 +14,9 @@ function Page() {
         }, 1300);
     };
 
-    const handleCargarDocentes = () => {
-        setCargaExitosa(true);
-        setTimeout(() => {
-            setCargaExitosa(false);
-            window.location.reload();
-        }, 1500);
-    };
-
-    const handleCargaExcel = () => {
-        setMostrarBotonDos(true);
-    };
-
-    const handleExcelUploader = () => {
-        setMostrarBoton(true);
-    };
-
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b flex justify-between">
             <div className='pt-8 pb-8 w-full'>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
-                    <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Docentes y Asesores</h1>
-                    </div>
-                </div>
-                <div className='p-10'>
-                    <div className="mt-2">
-                        <p>Por favor, asegúrate de descargar el formato <a className="text-green-500 hover:text-green-700" href='./Archivo_Docentes_Asesores.xlsx' download>Archivo_Docentes_Asesores</a>, ya que es el que cumple las condiciones para un correcto funcionamiento. Aquí puedes encontrar la <a className="text-green-500 hover:text-green-700" target='_blank' href='RUTA/GUIA/CUANDO/ESTE/LISTA' download> Guía para importar profesores y asesores al sistema gestion documental PPI.</a> Una vez que estés seguro, puedes proceder a subir tu archivo haciendo clic en el botón a continuación:</p>
-                        <br></br>
-                        <CargaExcel onClick={handleCargaExcel} />
-                    </div>
-                    {mostrarBotonDos && (
-                        <div className="mt-5">
-                            <button onClick={handleCargarDocentes} className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                                Cargar Docentes y Asesores
-                            </button>
-                        </div>
-                    )}
-                </div>
                 <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
                     <div>
                         <h1 className='text-4xl font-bold text-gray-600'>Estudiantes</h1>

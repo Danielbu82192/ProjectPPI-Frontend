@@ -1,310 +1,323 @@
 "use client";
+
+"use client";
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { FiArrowLeft } from 'react-icons/fi';
 
 function Page() {
     const [asignaturas, setAsignaturas] = useState([]);
-    const [asignaturasUnicas, setAsignaturasUnicas] = useState([]);
-    const [selectedAsignatura, setSelectedAsignatura] = useState('');
-    const [grupos, setGrupos] = useState([]);
-    const [selectedGrupo, setSelectedGrupo] = useState('');
-    const [studentSemester, setStudentSemester] = useState([]);
-    const [usuarios, setUsuarios] = useState([]);
-    const [equipos, setEquipos] = useState([]);
-    const [estudiantesSinEquipo, setEstudiantesSinEquipo] = useState([]);
-    const [errorMensaje, setErrorMensaje] = useState('');
-    const [mostrarBoton, setMostrarBoton] = useState(false);
-    const [ultimoCodigoEquipo, setUltimoCodigoEquipo] = useState(0); // Estado para almacenar el último código de equipo
-    const [nuevoEquipoEstudiantes, setNuevoEquipoEstudiantes] = useState([]); // Estado para almacenar los estudiantes seleccionados para el nuevo equipo
-    const [ultimoCodigoEquipoLocal, setUltimoCodigoEquipoLocal] = useState(0);
-    const [ultimaAsignaturaSeleccionada, setUltimaAsignaturaSeleccionada] = useState('');
-    const [equiposAgrupados, setEquiposAgrupados] = useState({}); // Estado para almacenar los equipos agrupados por Codigo_Equipo
-    const [estudiantesSeleccionados, setEstudiantesSeleccionados] = useState([]); // Estado para almacenar los estudiantes seleccionados en el popup
+    const [selectedGrupo, setSelectedGrupo] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        async function fetchData() {
+        const fetchData = async () => {
             try {
-                const response1 = await fetch('https://td-g-production.up.railway.app/usuario/StudentSemester');
-                const response2 = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetAllGroups');
-                if (response1.ok && response2.ok) {
-                    const data1 = await response1.json();
-                    const data2 = await response2.json();
-                    setStudentSemester(data1);
-                    setEquipos(data2);
-                    //console.log("Equipos:", data2)
-                } else {
-                    console.error('Error al obtener datos');
-                }
+                const asignaturasResponse = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/61560').then(res => res.json());
+                setAsignaturas(asignaturasResponse);
+                setLoading(false);
+
+                console.log(asignaturasResponse);
+
             } catch (error) {
                 console.error('Error al obtener datos:', error);
+                setError('Error al obtener datos.');
+                setLoading(false);
             }
-        }
-
+        };
         fetchData();
     }, []);
 
-    useEffect(() => {
-        async function fetchAsignaturas() {
-            try {
-                const response = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/57642');
-                if (response.ok) {
-                    const data = await response.json();
-                    setAsignaturas(data);
-                    const nombresUnicos = [...new Set(data.map(asignatura => asignatura.Asignatura_Nombre))];
-                    setAsignaturasUnicas(nombresUnicos);
-                } else {
-                    console.error('Error al obtener las asignaturas');
-                }
-            } catch (error) {
-                console.error('Error al obtener las asignaturas:', error);
-            }
-        }
 
-        fetchAsignaturas();
-    }, []);
+    if (loading) {
+        return <div className="p-6">Cargando...</div>;
+    }
 
-    useEffect(() => {
-        if (selectedAsignatura) {
-            const gruposAsignatura = asignaturas.filter(asignatura => asignatura.Asignatura_Nombre === selectedAsignatura);
-            setGrupos(gruposAsignatura);
-            setSelectedGrupo(''); // Resetear la opción del grupo
-        }
-    }, [selectedAsignatura, asignaturas]);
+    if (error) {
+        return <div className="p-6 text-red-500">{error}</div>;
+    }
 
-    useEffect(() => {
-        if (selectedAsignatura && selectedGrupo) {
-            const usuariosFiltrados = studentSemester.filter(usuario =>
-                usuario.Asignatura_Nombre === selectedAsignatura && usuario.Grupo_Codigo === parseInt(selectedGrupo)
-            );
-            setUsuarios(usuariosFiltrados);
-            if (usuariosFiltrados.length === 0) {
-                setErrorMensaje('Este grupo no tiene estudiantes cargados, si consideras que es un error, por favor comunícate con el Coordinador del PPI.');
-            } else {
-                setErrorMensaje('');
-            }
-        } else {
-            setUsuarios([]);
-            setErrorMensaje('');
-        }
-    }, [selectedAsignatura, selectedGrupo, studentSemester]);
-
-    useEffect(() => {
-        if (selectedAsignatura && selectedGrupo) {
-            const estudiantesEnEquipos = equipos.filter(equipo =>
-                equipo.Asignatura_Nombre === selectedAsignatura && equipo.Grupo_Codigo === parseInt(selectedGrupo)
-            ).map(equipo => equipo.Usuario_Nombre);
-
-            const estudiantesSinEquipo = usuarios.filter(usuario =>
-                usuario.Asignatura_Nombre === selectedAsignatura &&
-                usuario.Grupo_Codigo === parseInt(selectedGrupo) &&
-                !estudiantesEnEquipos.includes(usuario.Usuario_Nombre)
-            );
-
-            // Agrupar equipos por Codigo_Equipo
-            const equiposAgrupados = equipos.filter(equipo =>
-                equipo.Asignatura_Nombre === selectedAsignatura && equipo.Grupo_Codigo === parseInt(selectedGrupo)
-            ).reduce((groups, equipo) => {
-                if (!groups[equipo.Codigo_Equipo]) {
-                    groups[equipo.Codigo_Equipo] = [];
-                }
-                groups[equipo.Codigo_Equipo].push(equipo);
-                return groups;
-            }, {});
-
-            setEstudiantesSinEquipo(estudiantesSinEquipo);
-            setMostrarBoton(estudiantesSinEquipo.length > 0);
-            setEquiposAgrupados(equiposAgrupados); // Nuevo estado para los equipos agrupados
-        } else {
-            setEstudiantesSinEquipo([]);
-            setMostrarBoton(false);
-            setEquiposAgrupados({});
-        }
-    }, [selectedAsignatura, selectedGrupo, usuarios, equipos]);
-
-    const handleCrearEquipo = async () => {
-        try {
-            let nuevoCodigoEquipo;
-            if (ultimoCodigoEquipoLocal === 0 || selectedAsignatura !== ultimaAsignaturaSeleccionada) {
-                // Para el primer clic, utilizar la lógica original
-                const response1 = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/57642');
-                const data1 = await response1.json();
-                const asignaturaSemestre = data1.find(asignatura => asignatura.Asignatura_Nombre === selectedAsignatura)?.Asignatura_Semestre;
-                const response2 = await fetch(`https://td-g-production.up.railway.app/equipo-usuarios/GetGroupsByFirstDigit/${asignaturaSemestre}`);
-                const data2 = await response2.json();
-                if (data2.length === 0) {
-                    // Si el grupo de la asignatura no tiene equipos creados, el nuevo código será el primer número de ese semestre seguido de 1
-                    nuevoCodigoEquipo = parseInt(asignaturaSemestre.toString().charAt(0) + '00');
-                } else {
-                    nuevoCodigoEquipo = Math.max(...data2.map(equipo => parseInt(equipo.Codigo_Equipo))) + 1;
-                }
-                setUltimaAsignaturaSeleccionada(selectedAsignatura);
-            } else {
-                // Después del primer clic, incrementar el último código de equipo local en 1
-                nuevoCodigoEquipo = ultimoCodigoEquipoLocal + 1;
-            }
-
-            //console.log("Estudiantes seleccionados:", estudiantesSeleccionados);
-
-            const nuevosEquipos = estudiantesSeleccionados.map((estudiante) => ({
-                Usuario_ID: estudiante.Usuario_ID,
-                Codigo_Equipo: nuevoCodigoEquipo,
-                Usuario_Nombre: estudiante.Usuario_Nombre,
-                Asignatura_Nombre: selectedAsignatura,
-                Grupo_Codigo: parseInt(selectedGrupo)
-            }));
-
-            //console.log("Nuevos equipos:", nuevosEquipos); // Verifiquemos los nuevos equipos antes de agregarlos
-
-            setEquipos([...equipos, ...nuevosEquipos]);
-
-            // Mapear nuevosEquipos y formatear los datos como se espera para enviar al servidor
-            // Convertir objetos a formato requerido
-            const datosParaEnviar = nuevosEquipos.map(equipo => ({
-                Codigo_Equipo: equipo.Codigo_Equipo,
-                Usuario_ID: [equipo.Usuario_ID] // Convertir a un array de un solo elemento
-            }));
-
-            // Realizar la solicitud POST al endpoint con los datos formateados
-            axios.post('https://td-g-production.up.railway.app/equipo-usuarios/CreateGroups', datosParaEnviar, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-                .then(response => {
-                    //console.log('Respuesta del servidor:', response.data);
-                    // Si necesitas hacer algo con la respuesta del servidor, puedes hacerlo aquí
-                })
-                .catch(error => {
-                    console.error('Error al enviar datos al servidor:', error);
-                });
-
-            // Limpiar la lista de estudiantes seleccionados
-            setEstudiantesSeleccionados([]);
-
-            // Actualizar los equipos con el nuevo equipo
-            setUltimoCodigoEquipoLocal(nuevoCodigoEquipo);
-
-            // Filtrar los estudiantes sin equipo para excluir los seleccionados
-            const nuevosEstudiantesSinEquipo = estudiantesSinEquipo.filter(estudiante => !nuevoEquipoEstudiantes.includes(estudiante));
-
-            // Actualizar los estudiantes sin equipo con la nueva lista filtrada
-            setEstudiantesSinEquipo(nuevosEstudiantesSinEquipo);
-
-            // Limpiar la lista de estudiantes seleccionados
-            setNuevoEquipoEstudiantes([]);
-
-            // Aquí puedes realizar alguna acción con el nuevo código de equipo, por ejemplo, agregarlo a la lista de equipos
-            //console.log("Nuevo código de equipo:", nuevoCodigoEquipo);
-        } catch (error) {
-            console.error('Error al crear equipo:', error);
-        }
-    };
-
-    const toggleEstudianteSeleccionado = (estudiante) => {
-        // Verificar si el estudiante ya está seleccionado
-        const index = estudiantesSeleccionados.indexOf(estudiante);
-        if (index === -1) {
-            // Si no está seleccionado, agregarlo si el límite de 3 no se ha alcanzado
-            if (estudiantesSeleccionados.length < 3) {
-                setEstudiantesSeleccionados([...estudiantesSeleccionados, estudiante]);
-            }
-        } else {
-            // Si ya está seleccionado, quitarlo
-            const updatedSelection = [...estudiantesSeleccionados];
-            updatedSelection.splice(index, 1);
-            setEstudiantesSeleccionados(updatedSelection);
-        }
-    };
+    if (selectedGrupo) {
+        return <GrupoDetail grupo={selectedGrupo} setSelectedGrupo={setSelectedGrupo} />;
+    }
 
     return (
-        <div className="ml-6 mr-6 mt-6 border bg-white border-b">
-            <div className='pt-8 pb-8 w-full text-center'>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
-                    <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Crear Equipos</h1>
-                    </div>
-                </div>
-                <div className='p-10'>
-                    <div>
-                        <label className="text-lg font-medium text-gray-700">Seleccione una asignatura:</label>
-                    </div>
-                    <br />
-                    <select
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-indigo-500"
-                        value={selectedAsignatura}
-                        onChange={(e) => setSelectedAsignatura(e.target.value)}
+        <div className="p-6">
+            <h1 className="text-4xl font-bold text-gray-800 mb-6">Grupos de asignaturas</h1>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {asignaturas.map((asignatura, index) => (
+                    <div
+                        key={index}
+                        className="border rounded-lg p-4 shadow-lg cursor-pointer hover:bg-gray-100"
+                        onClick={() => setSelectedGrupo(asignatura)}
                     >
-                        <option value="" disabled></option>
-                        {asignaturasUnicas.map((asignatura, index) => (
-                            <option key={index} value={asignatura}>{asignatura}</option>
-                        ))}
-                    </select>
-                    <br />
-                    {selectedAsignatura && (
-                        <div>
-                            <label className="text-lg font-medium text-gray-700">Seleccione un grupo:</label>
-                            <br />
-                            <select
-                                className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-indigo-500"
-                                value={selectedGrupo}
-                                onChange={(e) => setSelectedGrupo(e.target.value)}
-                            >
-                                <option value="" disabled></option>
-                                {grupos.map((grupo, index) => (
-                                    <option key={index} value={grupo.Grupo_Codigo}>{grupo.Grupo_Codigo}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                    <br />
-                    {errorMensaje && <p>{errorMensaje}</p>}
-                    <br />
-                    <div className="bg-gray-100 p-4">
-                        <h2 className="text-lg font-medium text-gray-700 mb-4">Estudiantes sin Equipo</h2>
-                        <hr />
-                        <ul className="m-4 flex flex-col gap-2">
-                            {estudiantesSinEquipo.map((estudiante, index) => (
-                                <li key={index} className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={estudiantesSeleccionados.includes(estudiante)}
-                                        onChange={() => toggleEstudianteSeleccionado(estudiante)}
-                                        className="form-checkbox h-5 w-5 text-indigo-600"
-                                    />
-                                    <label className="ml-2">{estudiante.Usuario_Nombre}</label>
-                                </li>
-                            ))}
-                        </ul>
-                        <br />
-                        {mostrarBoton && estudiantesSeleccionados.length > 0 && (
-                            <div className="text-center">
-                                <button
-                                    className="inline-block w-auto border border-gray-300 rounded-md py-2 px-3 bg-green-500 text-white font-semibold hover:bg-green-600 focus:outline-none focus:border-green-700"
-                                    onClick={handleCrearEquipo}
-                                >
-                                    Crear Equipo
-                                </button><br /><br />
-                            </div>
-                        )}
-
+                        <h2 className="text-lg font-semibold">{asignatura.Asignatura_Nombre}</h2>
+                        <p className="text-gray-600">Grupo: {asignatura.Grupo_Codigo}</p>
                     </div>
-                    <br />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {Object.keys(equiposAgrupados).map((codigoEquipo, index) => (
-                            <div key={index} className="border border-gray-300 rounded p-4">
-                                <h2 className="text-lg font-medium text-gray-700">Equipo {codigoEquipo}</h2>
-                                <ul>
-                                    {equiposAgrupados[codigoEquipo].map((equipo, index) => (
-                                        <li key={index}> - {equipo.Usuario_Nombre}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                ))}
             </div>
         </div>
     );
+}
+
+function GrupoDetail({ grupo, setSelectedGrupo }) {
+    const [students, setStudents] = useState([]);
+    const [error, setError] = useState(null);
+    const [showPopup, setShowPopup] = useState(false);
+    const [repeatedTeams, setRepeatedTeams] = useState({});
+    const [teamList, setTeamList] = useState([]);
+
+    useEffect(() => {
+        const fetchStudents = async () => {
+            try {
+                const response = await fetch('https://td-g-production.up.railway.app/usuario/StudentSemester');
+                const data = await response.json();
+
+                const filteredStudents = data.filter(student =>
+                    student.Asignatura_Nombre === grupo.Asignatura_Nombre && student.Grupo_Codigo === grupo.Grupo_Codigo
+                ).map(student => ({
+                    ...student,
+                    Usuario_Nombre: formatStudentName(student.Usuario_Nombre)
+                }));
+                setStudents(filteredStudents);
+            } catch (error) {
+                console.error('Error al obtener estudiantes:', error);
+                setError('Error al obtener estudiantes.');
+            }
+        };
+        fetchStudents();
+    }, [grupo]);
+
+    const handleSort = () => {
+        const sortedStudents = [...students].sort((a, b) => {
+            const equipoA = isNaN(parseInt(a.equipo)) ? Infinity : parseInt(a.equipo);
+            const equipoB = isNaN(parseInt(b.equipo)) ? Infinity : parseInt(b.equipo);
+
+            if (equipoA === Infinity && equipoB === Infinity) {
+                return 0;
+            }
+            if (equipoA === Infinity) {
+                return 1;
+            }
+            if (equipoB === Infinity) {
+                return -1;
+            }
+            return equipoA - equipoB;
+        });
+        setStudents(sortedStudents);
+    };
+
+    const handleEquipoChange = (index, value) => {
+        if (value !== '' && parseInt(value) === 0) {
+            alert('El número de equipo no puede ser 0.');
+            return;
+        }
+
+        const newStudents = [...students];
+        newStudents[index].equipo = value === '' ? null : value;
+        setStudents(newStudents);
+
+        const equipoCounts = newStudents.reduce((acc, student) => {
+            if (student.equipo !== null && student.equipo !== '' && !isNaN(student.equipo)) {
+                acc[student.equipo] = (acc[student.equipo] || 0) + 1;
+            }
+            return acc;
+        }, {});
+
+        const newRepeatedTeams = {};
+        for (const [equipo, count] of Object.entries(equipoCounts)) {
+            if (count > 3) {
+                newRepeatedTeams[equipo] = true;
+            }
+        }
+        setRepeatedTeams(newRepeatedTeams);
+    };
+
+    const validateTeams = () => {
+        for (const student of students) {
+            if (!student.equipo || parseInt(student.equipo) === 0) {
+                alert('Todos los campos de equipo deben estar llenos y no pueden ser 0.');
+                return false;
+            }
+        }
+
+        const equipoCounts = students.reduce((acc, student) => {
+            if (student.equipo !== null && student.equipo !== '' && !isNaN(student.equipo)) {
+                acc[student.equipo] = (acc[student.equipo] || 0) + 1;
+            }
+            return acc;
+        }, {});
+        for (const count of Object.values(equipoCounts)) {
+            if (count > 3) {
+                alert('Un número de equipo no puede repetirse más de 3 veces.');
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    const handleReportTeams = () => {
+        setShowPopup(true);
+    };
+
+    async function handleConfirm(confirmed) {
+        setShowPopup(false);
+        if (confirmed) {
+            if (validateTeams()) {
+                try {
+                    const response = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/GetAllGroups');
+                    const data = await response.json();
+
+                    let maxEquipoCodigo = 0;
+                    // Buscar el mayor Codigo_Equipo que comience con el número de Asignatura_Semestre
+                    const asignaturaSemestrePrefix = parseInt(grupo.Asignatura_Semestre);
+                    for (const team of data) {
+                        const codigoEquipo = parseInt(team.Codigo_Equipo);
+                        if (codigoEquipo.toString().startsWith(asignaturaSemestrePrefix.toString())) {
+                            if (codigoEquipo > maxEquipoCodigo) {
+                                maxEquipoCodigo = codigoEquipo;
+                            }
+                        }
+                    }
+
+                    let newEquipoCodigo;
+                    if (maxEquipoCodigo === 0) {
+                        // Si no se encontró ningún equipo con el prefijo de Asignatura_Semestre, se crea un nuevo equipo con el formato correcto
+                        newEquipoCodigo = asignaturaSemestrePrefix * 100;
+                    } else {
+                        // Si se encontró algún equipo con el prefijo de Asignatura_Semestre, se crea un nuevo equipo con el siguiente número después del mayor existente
+                        newEquipoCodigo = maxEquipoCodigo + 1;
+                    }
+
+                    const equiposList = {};
+                    students.forEach(student => {
+                        if (student.equipo) {
+                            if (!equiposList[student.equipo]) {
+                                equiposList[student.equipo] = [];
+                            }
+                            equiposList[student.equipo].push(student.Usuario_ID);
+                        }
+                    });
+
+                    const newTeams = Object.entries(equiposList).map(([codigoEquipo, usuarios]) => ({
+                        Codigo_Equipo: newEquipoCodigo++,
+                        Usuario_ID: usuarios
+                    }));
+
+                    const createResponse = await fetch('https://td-g-production.up.railway.app/equipo-usuarios/CreateGroups', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(newTeams)
+                    });
+
+                    if (createResponse.ok) {
+                        setTeamList(newTeams);
+                    } else {
+                        alert('Error al crear los equipos:', error);
+                    }
+                } catch (error) {
+                    console.error('Error al crear los equipos:', error);
+                    alert('Error al crear los equipos.');
+                }
+            }
+        } else {
+            console.log("No se confirmaron los equipos");
+        }
+    }
+
+    return (
+        <div className="p-6">
+            <div className="flex items-center mb-4">
+                <button onClick={() => setSelectedGrupo(null)} className="p-2 bg-red-500 text-white rounded mr-2">
+                    <FiArrowLeft />
+                </button>
+                <h1 className="text-xl font-bold text-gray-800">
+                    Grupo {grupo.Grupo_Codigo} - {grupo.Asignatura_Nombre}
+                </h1>
+            </div>
+            {error && <div className="text-red-500 mb-4">{error}</div>}
+            <table className="min-w-full bg-white border border-collapse">
+                <thead>
+                    <tr>
+                        <th className="py-1 px-2 border">Cédula</th>
+                        <th className="py-1 px-2 border">Nombre</th>
+                        <th className="py-1 px-2 border" style={{ width: '20%' }}>Equipo
+                            <svg onClick={handleSort} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#000000" fill="none" className="cursor-pointer inline-block ml-1">
+                                <path d="M3 9L14 9.00008" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M3 15H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M3 3H19" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M18.521V9M18.5 21C17.7998 21 16.4915 19.0057 16 18.5M18.5 21C19.2002 21 20.5085 19.0057 21 18.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {students.map((student, index) => (
+                        <tr key={student.Usuario_ID}>
+                            <td className="py-1 text-xs px-2 border text-center">{student.Usuario_Documento}</td>
+                            <td className="py-1 text-xs px-2 border" style={{ width: '60%' }}>{student.Usuario_Nombre}</td>
+                            <td className={`py-1 text-xs px-2 border ${repeatedTeams[student.equipo] ? 'bg-red-200' : ''}`}>
+                                <input
+                                    type="number"
+                                    value={student.equipo || ''}
+                                    onChange={(e) => handleEquipoChange(index, e.target.value)}
+                                    className="border rounded p-1 text-xs w-full text-center"
+                                    min="1"
+                                    style={{ WebkitAppearance: "none", MozAppearance: "textfield" }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+            <div className="flex justify-center mt-4">
+                <button className="bg-green-500 text-white py-2 px-4 rounded mr-2">Guardar tabla</button>
+                <button onClick={handleReportTeams} className="bg-red-800 text-white py-2 px-4 rounded">Reportar equipos</button>
+            </div>
+            {showPopup && (
+                <div className="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-500 bg-opacity-50">
+                    <div className="bg-white p-6 rounded shadow-md">
+                        <p className="mb-4">¿Estás seguro de tener los equipos listos?</p>
+                        <div className="flex justify-center">
+                            <button onClick={() => handleConfirm(true)} className="bg-green-500 text-white py-2 px-4 rounded mr-2">Sí</button>
+                            <button onClick={() => handleConfirm(false)} className="bg-red-500 text-white py-2 px-4 rounded">No</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {teamList.length > 0 && (
+                <div className="mt-6">
+                    <h2 className="text-lg font-bold mb-2">Equipos Creados:</h2>
+                    <ul>
+                        {teamList.map((team, index) => (
+                            <li key={index}>
+                                <strong>Código de Equipo:</strong> {team.Codigo_Equipo}<br />
+                                <strong>Usuarios:</strong> {team.Usuario_ID.join(', ')}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function formatStudentName(name) {
+    const nameParts = name.trim().split(' ');
+    const formattedNameParts = nameParts.map(part => capitalizeFirstLetter(part));
+    return formattedNameParts.join(' ');
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 }
 
 export default Page;

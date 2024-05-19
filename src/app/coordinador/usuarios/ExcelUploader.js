@@ -24,6 +24,7 @@ const ExcelUploader = ({ onUpload }) => {
         const codigo = sheet.B2.v;
         const documentoProfesor = sheet.B1.v;
         const grupoAsignatura = sheet.B3.v;
+        const correoProfesor = sheet.D3.v;
 
         const extractedData = jsonData.slice(4).map(row => ({
           documento: row[docIndex],
