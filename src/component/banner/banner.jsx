@@ -106,7 +106,7 @@ const SlideBanner = () => {
         if (banners.length === 1) {
             return (
                 <>
-                    <img src={banners[0].urlImagen} className="object-cover min-w-[100%] rounded-lg" loading="eager" alt="" onClick={() => openModal(banners[0])} />
+                    <img src={`http://localhost:3002${banners[0].urlImagen}`} className="object-cover min-w-[100%] rounded-lg" loading="eager" alt="" onClick={() => openModal(banners[0])} />
                     {selectedBanner && NewModal(selectedBanner.contenidoBanner, selectedBanner.nombre, `http://localhost:3002${selectedBanner.urlImagen}`, true, closeModal)}
                 </>
             )
