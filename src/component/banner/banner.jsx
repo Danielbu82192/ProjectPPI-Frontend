@@ -123,7 +123,7 @@ const SlideBanner = () => {
         );
     } else {
         return (
-            <img className='w-[100%] m-4 rounded-lg' src="https://www.politecnicojic.edu.co/images/logo/logo-negro.png" alt="" />
+            <img className='w-auto m-4 rounded-lg' src="https://www.politecnicojic.edu.co/images/logo/logo-negro.png" alt="" />
         )
     }
 };
