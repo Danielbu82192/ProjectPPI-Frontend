@@ -165,7 +165,7 @@ const SlideNewsCard = () => {
         )
     } else {
         return (
-            <div className="">
+            <div className="flex flex-row justify-center">
                 No hay novedades en el momento!
             </div>
         )
