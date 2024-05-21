@@ -109,3 +109,70 @@ tr:nth-child(odd) {
     justify-content: center;
     /* Para centrar horizontalmente */
 }
+
+/* Add this to your Page.css file */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    background-color: transparent;
+}
+
+thead {
+    background-color: #f2f2f2;
+}
+
+th, td {
+    text-align: center;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.calificacion-header, .calificacion-container, .nota-container {
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    tr {
+        border: 1px solid #ccc;
+    }
+
+    td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+
+    td:before {
+        position: absolute;
+        top: 50%;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        transform: translateY(-50%);
+        text-align: left;
+        font-weight: bold;
+    }
+
+    td:nth-of-type(1):before { content: "Nombre"; }
+    td:nth-of-type(2):before { content: "Porcentaje"; }
+    td:nth-of-type(3):before { content: "Calificación"; }
+}

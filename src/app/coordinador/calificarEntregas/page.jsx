@@ -11,6 +11,8 @@ function Page() {
     const [ppiEntregaSOL, setPpiEntregaSOL] = useState([]);
     const [entregasMap, setEntregasMap] = useState(new Map());
     const [calificaciones, setCalificaciones] = useState(new Map());
+    const [equiposConNotas, setEquiposConNotas] = useState([]); // Estado para almacenar los equipos y sus notas
+    const [usuarios, setUsuarios] = useState({}); // Estado para almacenar los usuarios
 
     useEffect(() => {
         async function fetchEntregas() {
@@ -63,6 +65,7 @@ function Page() {
         fetchData();
     }, []);
 
+    
     useEffect(() => {
         async function fetchAsignaturas() {
             try {
@@ -81,7 +84,24 @@ function Page() {
         }
 
         fetchAsignaturas();
+
+        // Función para obtener los usuarios
+        const fetchUsuarios = async () => {
+            try {
+                const response = await axios.get('https://td-g-production.up.railway.app/usuario');
+                const usuariosMap = {};
+                response.data.forEach(usuario => {
+                    usuariosMap[usuario.id] = usuario;
+                });
+                setUsuarios(usuariosMap);
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        };
+
+        fetchUsuarios();
     }, []);
+
 
     useEffect(() => {
         async function buscarEquipos() {
@@ -91,6 +111,19 @@ function Page() {
                     const data = await response.json();
                     setGrupos(data);
                     setEquipos(new Set(data.map(equipo => equipo.Codigo_Equipo)));
+                    const equiposAgrupados = data.reduce((acc, equipo) => {
+                        if (!acc[equipo.Codigo_Equipo]) {
+                            acc[equipo.Codigo_Equipo] = [];
+                        }
+                        acc[equipo.Codigo_Equipo].push(equipo);
+                        return acc;
+                    } , {});
+                    console.log('equiposAgrupados', equiposAgrupados);
+                    const equiposConNotas = Object.entries(equiposAgrupados).map(([equipo, integrantes]) => {
+                        const notas = integrantes.map(integrante => integrante.Nota);
+                        return [equipo, notas];
+                    });
+                    setEquiposConNotas(equiposConNotas);
                 } else {
                     console.error('Error al obtener los equipos');
                 }
@@ -102,6 +135,66 @@ function Page() {
         buscarEquipos();
     }, []);
 
+    /* console.log('equipos', ...equipos);
+    console.log('ppiEntregaSOL', ppiEntregaSOL);
+    console.log('calificaciones', calificaciones);
+    
+    console.log('entregasMap', entregasMap); */
+
+    /* Agrupar por equipo con integrantes y entregas:
+        const equiposAgrupados: {
+        100: [
+            {
+                "Codigo_Equipo": 100,
+                "Usuario_Nombre": "DANIEL BUSTAMANTE CASTRO",
+                "Grupo_Codigo": 63,
+                "Asignatura_Nombre": "Desarrollo del Pensamiento Analítico y Sistémico 1",
+                "Asignatura_Semestre": 1,
+                "Nota_Asesoria_Definitiva_Individual": null,
+                "Usuario_ID": 61601
+            },
+            {
+                "Codigo_Equipo": 100,
+                "Usuario_Nombre": "AGUDELO MARIN JULIAN DAVID",
+                "Grupo_Codigo": 62,
+                "Asignatura_Nombre": "Desarrollo del Pensamiento Analítico y Sistémico 1",
+                "Asignatura_Semestre": 1,
+                "Nota_Asesoria_Definitiva_Individual": null,
+                "Usuario_ID": 61566
+            },
+            {
+                "Codigo_Equipo": 100,
+                "Usuario_Nombre": "MESA JARAMILLO JOSEPH JOSEPH",
+                "Grupo_Codigo": 62,
+                "Asignatura_Nombre": "Desarrollo del Pensamiento Analítico y Sistémico 1",
+                "Asignatura_Semestre": 1,
+                "Nota_Asesoria_Definitiva_Individual": null,
+                "Usuario_ID": 61574
+            }
+        ],
+        101: [
+            {
+                "Codigo_Equipo": 101,
+                "Usuario_Nombre": "HINCAPIE VILLADA SANTIAGO",
+                "Grupo_Codigo": 62,
+                "Asignatura_Nombre": "Desarrollo del Pensamiento Analítico y Sistémico 1",
+                "Asignatura_Semestre": 1,
+                "Nota_Asesoria_Definitiva_Individual": null,
+                "Usuario_ID": 61561
+            }
+        ]
+    }
+    */
+
+    const equiposAgrupados = grupos.reduce((acc, equipo) => {
+        if (!acc[equipo.Codigo_Equipo]) {
+            acc[equipo.Codigo_Equipo] = [];
+        }
+        acc[equipo.Codigo_Equipo].push(equipo);
+        return acc;
+    } , {});
+    // console.log('equiposAgrupados', equiposAgrupados);
+
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b">
             <div className='pt-8 pb-8 w-full text-center'>
@@ -110,10 +203,10 @@ function Page() {
                         <h1 className='text-4xl font-bold text-gray-600'>Calificar Entregas</h1>
                     </div>
                 </div>
-                <div className='p-10'>
+                <div className='p-5'>
                     <div>
-                        <p>Esta es la ventana de Calificar Entregas. Aquí podrás revisar y evaluar el trabajo que han entregado los equipos de tus grupos en todas las asignaturas que enseñas. Si ves una tabla vacía para algún grupo, significa que ninguno de los equipos ha entregado nada todavía. Recuerda calificar grupo por grupo para evitar inconsistencias.</p>
-                        <p>Una vez hagas click en el botón de Guardar Notas, deberás esperar a que salga la alerta de confirmación de guardado.</p>
+                        {/*<p>Esta es la ventana de Calificar Entregas. Aquí podrás revisar y evaluar el trabajo que han entregado los equipos de tus grupos en todas las asignaturas que enseñas. Si ves una tabla vacía para algún grupo, significa que ninguno de los equipos ha entregado nada todavía. Recuerda calificar grupo por grupo para evitar inconsistencias.</p>
+                        <p>Una vez hagas click en el botón de Guardar Notas, deberás esperar a que salga la alerta de confirmación de guardado.</p>*/}
                     </div>
                     <br />
                     {ppiEntregaSOL.length > 0 && (
@@ -125,6 +218,9 @@ function Page() {
                                             Equipo
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Nombre
+                                        </th>
+                                        {/* <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Entrega
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -138,117 +234,32 @@ function Page() {
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Calificación
-                                        </th>
+                                        </th> */}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {[...equipos].map((equipo, index) => (
-                                        <React.Fragment key={index}>
-                                            {ppiEntregaSOL.map((entrega, entregaIndex) => {
-                                                const fechaPlazo = new Date(entrega.Plazo_Calificacion);
-                                                const fechaActual = new Date(); // Fecha y hora actual
-                                                const fechaFormateada = fechaPlazo.toLocaleString('es-CO', { timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
-
-                                                // Verificar si el plazo para calificar ha pasado
-                                                const plazoPasado = fechaActual > fechaPlazo;
-
-                                                // Verificar si hay una entrega asociada al equipo actual
-                                                const entregaEquipo = entregasMap.get(equipo);
-                                                const tieneEntrega = entregaEquipo && entregaEquipo.find(entregaEquipo => entregaEquipo.Tipo_Entrega_Descripcion === entrega.Tipo_Entrega_Descripcion && entregaEquipo.Entrega_Equipo_PPI_ID !== null);
-
-                                                // Si hay entrega, obtener la ubicación del adjunto
-                                                const ubicacionAdjunto = tieneEntrega ? entregaEquipo.Ubicacion_Entrega : '';
-
-                                                // Si la entrega ha sido cargada, mostrarla en la tabla
-                                                if (tieneEntrega) {
-                                                    return (
-                                                        <tr key={`${index}-${entregaIndex}`} className={entregaIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">{equipo}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{entrega.Tipo_Entrega_Descripcion}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{entrega.Porcentaje_Entrega}%</td>
-                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center ${plazoPasado ? 'text-red-500' : ''}`}>
-                                                                {fechaFormateada}
-                                                                {plazoPasado ? null : <CountdownTimer deadline={fechaPlazo} />}
+                                    {Object.entries(equiposAgrupados).forEach(([codigoEquipo, integrantes]) => {
+                                        <React.Fragment key={codigoEquipo}>
+                                            {integrantes.map((integrante, idx) => {
+                                                const usuario = usuarios[integrante.Usuario_ID];
+                                                console.log('usuario', usuario);
+                                                console.log(`integrandte ${idx}`, integrante.Usuario_Nombre);
+                                                return (
+                                                    <tr key={idx}>
+                                                        {idx === 0 && (
+                                                            <td
+                                                                className="border border-gray-300 text-sm px-4 py-2 font-bold cursor-pointer"
+                                                                rowSpan={integrantes.length}
+                                                            >
+                                                                {codigoEquipo}
                                                             </td>
-
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center flex justify-center items-center">
-                                                                {/* Mostrar botón con logo SVG si hay entrega */}
-                                                                {tieneEntrega && (
-                                                                    <svg
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                        viewBox="0 0 24 24"
-                                                                        width="24"
-                                                                        height="24"
-                                                                        color="#000000"
-                                                                        fill="none"
-                                                                        className="cursor-pointer"
-                                                                        onClick={async () => {
-                                                                            try {
-                                                                                const response = await fetch(`https://td-g-production.up.railway.app/entrega-equipo-ppi/GetPPIEntregaByID/${equipo}`);
-                                                                                if (response.ok) {
-                                                                                    const data = await response.json();
-                                                                                    const tipoEntregaActual = entrega.Tipo_Entrega_Descripcion; // CONFIGURACION Suponiendo que esta variable esté disponible en el alcance de esta función
-                                                                                    const entregaEquipo = data.find(entrega =>
-                                                                                        entrega.Codigo_Equipo === equipo &&
-                                                                                        entrega.Tipo_Entrega_Descripcion === tipoEntregaActual
-                                                                                    );
-                                                                                    if (entregaEquipo && (entregaEquipo.Ubicacion_Entrega !== null && entregaEquipo.Ubicacion_Entrega !== '')) {
-                                                                                        window.open(entregaEquipo.Ubicacion_Entrega, '_blank');
-                                                                                    } else {
-                                                                                        alert("Esta entrega no tiene un archivo adjunto.");
-                                                                                    }
-                                                                                } else {
-                                                                                    console.error('Error al obtener las entregas para el equipo', equipo);
-                                                                                }
-                                                                            } catch (error) {
-                                                                                console.error('Error al obtener las entregas para el equipo', equipo, error);
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        <path d="M17.4776 9.01106C17.485 9.01102 17.4925 9.01101 17.5 9.01101C19.9853 9.01101 22 11.0294 22 13.5193C22 15.8398 20.25 17.7508 18 18M17.4776 9.01106C17.4924 8.84606 17.5 8.67896 17.5 8.51009C17.5 5.46695 15.0376 3 12 3C9.12324 3 6.76233 5.21267 6.52042 8.03192M17.4776 9.01106C17.3753 10.1476 16.9286 11.1846 16.2428 12.0165M6.52042 8.03192C3.98398 8.27373 2 10.4139 2 13.0183C2 15.4417 3.71776 17.4632 6 17.9273M6.52042 8.03192C6.67826 8.01687 6.83823 8.00917 7 8.00917C8.12582 8.00917 9.16474 8.38194 10.0005 9.01101" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                        <path d="M12 21L12 13M12 21C11.2998 21 9.99153 19.0057 9.5 18.5M12 21C12.7002 21 14.0085 19.0057 14.5 18.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    </svg>
-                                                                )}
-                                                            </td>
-
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                                <input
-                                                                    type="text"
-                                                                    className={`border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:border-indigo-500 ${plazoPasado ? 'cursor-not-allowed' : ''}`}
-                                                                    size="4"
-                                                                    pattern="[0-5](,[0-9])?$"
-                                                                    title="Debe ser un número entre 0 y 5, opcionalmente seguido de un decimal separado por coma."
-                                                                    onKeyPress={(event) => {
-                                                                        // Evita que se ingresen caracteres que no sean números, comas o el punto de decimal
-                                                                        const allowedCharacters = /[0-9,]/;
-                                                                        const key = event.key;
-                                                                        if (!allowedCharacters.test(key)) {
-                                                                            event.preventDefault();
-                                                                        }
-                                                                    }}
-                                                                    // Desactivar la casilla si el plazo ha pasado
-                                                                    disabled={plazoPasado}
-                                                                    // Establecer el valor predeterminado de la casilla
-                                                                    value={calificaciones.has(`${equipo}-${entrega.Tipo_Entrega_ID}`) ? calificaciones.get(`${equipo}-${entrega.Tipo_Entrega_ID}`).replace('.', ',') : ''}
-                                                                    onChange={(event) => {
-                                                                        // Actualizar la calificación en el estado mientras se edita
-                                                                        const newValue = event.target.value.replace(',', '.');
-                                                                        setCalificaciones(prevCalificaciones => {
-                                                                            const newCalificaciones = new Map(prevCalificaciones);
-                                                                            newCalificaciones.set(`${equipo}-${entrega.Tipo_Entrega_ID}`, newValue);
-                                                                            return newCalificaciones;
-                                                                        });
-                                                                    }}
-                                                                />
-
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                }
-                                                return null; // No hay entrega para este equipo y este tipo de entrega
+                                                        )}
+                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Usuario_Nombre}</td>
+                                                    </tr>
+                                                );
                                             })}
                                         </React.Fragment>
-                                    ))}
+                                    })}
                                 </tbody>
                             </table>
                             <br />

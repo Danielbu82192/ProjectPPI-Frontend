@@ -6,9 +6,7 @@ import CountdownTimer from '@/app/utils/timer';
 function Page() {
     const [asignaturas, setAsignaturas] = useState([]);
     const [asignaturasUnicas, setAsignaturasUnicas] = useState([]);
-    const [selectedAsignatura, setSelectedAsignatura] = useState('');
     const [grupos, setGrupos] = useState([]);
-    const [selectedGrupo, setSelectedGrupo] = useState('');
     const [equipos, setEquipos] = useState(new Set());
     const [ppiEntregaSOL, setPpiEntregaSOL] = useState([]);
     const [entregasMap, setEntregasMap] = useState(new Map());
@@ -50,7 +48,7 @@ function Page() {
     useEffect(() => {
         async function fetchData() {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/configuracion-entrega/GetPPIEntregaSOL');
+                const response = await fetch('https://td-g-production.up.railway.app/configuracion-entrega/GetPPIEntregaCoordinador');
                 if (response.ok) {
                     const data = await response.json();
                     setPpiEntregaSOL(data);
@@ -65,10 +63,11 @@ function Page() {
         fetchData();
     }, []);
 
+    
     useEffect(() => {
         async function fetchAsignaturas() {
             try {
-                const response = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/61560');
+                const response = await fetch('https://td-g-production.up.railway.app/usuario-asignatura/GroupsDocente/57642');
                 if (response.ok) {
                     const data = await response.json();
                     setAsignaturas(data);
@@ -86,29 +85,15 @@ function Page() {
     }, []);
 
     useEffect(() => {
-        if (selectedAsignatura) {
-            const gruposAsignatura = asignaturas.filter(asignatura => asignatura.Asignatura_Nombre === selectedAsignatura);
-            setGrupos(gruposAsignatura);
-            setSelectedGrupo('');
-            setEquipos(new Set()); // Limpiamos el conjunto de equipos al cambiar la asignatura
-        }
-    }, [selectedAsignatura, asignaturas]);
-
-    useEffect(() => {
         async function buscarEquipos() {
             try {
-                if (selectedAsignatura && selectedGrupo) {
-                    const response = await fetch(`https://td-g-production.up.railway.app/equipo-usuarios/GetAllGroups`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        const equiposFiltrados = data.filter(equipo => equipo.Asignatura_Nombre === selectedAsignatura && equipo.Grupo_Codigo === parseInt(selectedGrupo));
-                        const codigosEquipos = new Set(equiposFiltrados.map(equipo => equipo.Codigo_Equipo)); // Usamos un Set para almacenar los códigos únicos de equipo
-                        setEquipos(codigosEquipos);
-                    } else {
-                        console.error('Error al obtener los equipos');
-                    }
+                const response = await fetch(`https://td-g-production.up.railway.app/equipo-usuarios/GetAllGroups`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setGrupos(data);
+                    setEquipos(new Set(data.map(equipo => equipo.Codigo_Equipo)));
                 } else {
-                    setEquipos(new Set());
+                    console.error('Error al obtener los equipos');
                 }
             } catch (error) {
                 console.error('Error al obtener los equipos:', error);
@@ -116,7 +101,7 @@ function Page() {
         }
 
         buscarEquipos();
-    }, [selectedAsignatura, selectedGrupo]);
+    }, []);
 
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b">
@@ -130,40 +115,9 @@ function Page() {
                     <div>
                         <p>Esta es la ventana de Calificar Entregas. Aquí podrás revisar y evaluar el trabajo que han entregado los equipos de tus grupos en todas las asignaturas que enseñas. Si ves una tabla vacía para algún grupo, significa que ninguno de los equipos ha entregado nada todavía. Recuerda calificar grupo por grupo para evitar inconsistencias.</p>
                         <p>Una vez hagas click en el botón de Guardar Notas, deberás esperar a que salga la alerta de confirmación de guardado.</p>
-                        <br />
-                        <label className="text-lg font-medium text-gray-700">Seleccione una asignatura:</label>
                     </div>
                     <br />
-                    <select
-                        className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-indigo-500"
-                        value={selectedAsignatura}
-                        onChange={(e) => setSelectedAsignatura(e.target.value)}
-                    >
-                        <option value="" disabled></option>
-                        {asignaturasUnicas.map((asignatura, index) => (
-                            <option key={index} value={asignatura}>{asignatura}</option>
-                        ))}
-                    </select>
-                    <br />
-                    {selectedAsignatura && (
-                        <div>
-                            <label className="text-lg font-medium text-gray-700">Seleccione un grupo:</label>
-                            <br />
-                            <select
-                                className="block w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-indigo-500"
-                                value={selectedGrupo}
-                                onChange={(e) => setSelectedGrupo(e.target.value)}
-                            >
-                                <option value="" disabled></option>
-                                {grupos.map((grupo, index) => (
-                                    <option key={index} value={grupo.Grupo_Codigo}>{grupo.Grupo_Codigo}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                    <br />
-
-                    {equipos.size > 0 && (
+                    {ppiEntregaSOL.length > 0 && (
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -234,7 +188,7 @@ function Page() {
                                                                                 const response = await fetch(`https://td-g-production.up.railway.app/entrega-equipo-ppi/GetPPIEntregaByID/${equipo}`);
                                                                                 if (response.ok) {
                                                                                     const data = await response.json();
-                                                                                    const tipoEntregaActual = entrega.Tipo_Entrega_Descripcion;
+                                                                                    const tipoEntregaActual = entrega.Tipo_Entrega_Descripcion; // CONFIGURACION Suponiendo que esta variable esté disponible en el alcance de esta función
                                                                                     const entregaEquipo = data.find(entrega =>
                                                                                         entrega.Codigo_Equipo === equipo &&
                                                                                         entrega.Tipo_Entrega_Descripcion === tipoEntregaActual
@@ -292,15 +246,14 @@ function Page() {
                                                         </tr>
                                                     );
                                                 }
-                                                return null; // No renderizar si la entrega no ha sido cargada
+                                                return null; // No hay entrega para este equipo y este tipo de entrega
                                             })}
                                         </React.Fragment>
                                     ))}
-
                                 </tbody>
                             </table>
                             <br />
-                            {selectedAsignatura && selectedGrupo && (
+                            {equipos.size !== 0 && (
                                 <div>
                                     <button
                                         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
@@ -330,12 +283,6 @@ function Page() {
                                                                     valid = false;
                                                                     alert('Por favor, asegúrate de que todas las calificaciones estén entre 0 y 5.');
                                                                 }
-                                                            } else {
-                                                                // Si la calificación está vacía, la agregamos como nula
-                                                                dataToSend.push({
-                                                                    Entrega_Equipo_PPI_ID: entregaEnEquipo.Entrega_Equipo_PPI_ID,
-                                                                    Calificacion: null
-                                                                });
                                                             }
                                                         }
                                                     }
@@ -368,14 +315,14 @@ function Page() {
                                         Guardar Notas
                                     </button>
 
+
                                 </div>
                             )}
                         </div>
                     )}
-
-                    {/* Mensaje de "No hay equipos" si no se han seleccionado asignatura y grupo */}
-                    {selectedAsignatura && selectedGrupo && equipos.size === 0 && (
-                        <div>Este grupo no tiene equipos creados hasta el momento.</div>
+                    {/* Mostrar mensaje si no hay entregas para mostrar */}
+                    {equipos.size === 0 && (
+                        <p className="text-center mt-4 text-gray-500">No hay equipos disponibles para mostrar.</p>
                     )}
 
                 </div>

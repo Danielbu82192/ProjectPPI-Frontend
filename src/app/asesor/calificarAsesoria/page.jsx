@@ -61,7 +61,7 @@ function Page() {
                 return {
                     Usuario_ID: grupo.Usuario_ID,
                     Codigo_Equipo: grupo.Codigo_Equipo,
-                    Nota_Asesoria_Definitiva_Individual: nota
+                    Nota_Asesoria_Definitiva_Individual: nota,
                 };
             });
     
@@ -97,16 +97,16 @@ function Page() {
 
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b">
-            <div className='pt-8 pb-8 w-full text-center'>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
+            <div className='pt-4 pb-8 w-full text-center'>
+                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 flex justify-between items-center'>
                     <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Calificar Asesorías</h1>
+                        <h1 className='text-2xl font-bold text-gray-600'>Calificación de asesorías</h1>
                     </div>
                 </div>
-                <div className='p-10'>
+                <div className='pr-5 pl-5'>
                     <div>
-                        <p>Esta es la ventana de Calificar Asesorías. Aquí podrás registrar la nota final de Asesorías para cada uno de los estudiantes.</p>
-                        <p>Una vez hagas click en el botón de Guardar Notas, deberás esperar a que salga la alerta de confirmación de guardado.</p>
+                        {/*<p>Esta es la ventana de Calificar Asesorías. Aquí podrás registrar la nota final de Asesorías para cada uno de los estudiantes.</p>
+                        <p>Una vez hagas click en el botón de Guardar Notas, deberás esperar a que salga la alerta de confirmación de guardado.</p>*/}
                     </div>
                     <br />
                     {grupos.length > 0 ? (
@@ -114,16 +114,16 @@ function Page() {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-green-700">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-200 uppercase tracking-wider">
+                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-100 uppercase tracking-wider">
                                             Estudiante
                                         </th>
-                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-200 uppercase tracking-wider">
-                                            Equipo
+                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-100 uppercase tracking-wider">
+                                            Equipo - Grupo
                                         </th>
-                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-200 uppercase tracking-wider">
+                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-100 uppercase tracking-wider">
                                             Plazo
                                         </th>
-                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-200 uppercase tracking-wider">
+                                        <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-100 uppercase tracking-wider">
                                             Calificación
                                         </th>
                                     </tr>
@@ -144,20 +144,20 @@ function Page() {
 
                                         return (
                                             <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                                     {grupo.Usuario_Nombre}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                                    {grupo.Codigo_Equipo}
+                                                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                    {grupo.Codigo_Equipo + ' - ' + grupo.Grupo_Codigo}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                                     {fechaFormateada}<br></br>
                                                     {plazoPasado ? 'Plazo expirado' : <CountdownTimer deadline={fechacalificacion} ></CountdownTimer>}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                                <td className="px-6 py-2 whitespace-nowrap text-sm text-gray-500 text-center">
                                                     <input
                                                         type="text"
-                                                        className={`text-center ${isPastDeadline() ? 'cursor-not-allowed' : ''}`}
+                                                        className={`text-center border-gray-300  ${isPastDeadline() ? 'cursor-not-allowed' : ''}`}
                                                         size="4"
                                                         pattern="^(0(\.[0-9])?|1(\.0)?|2(\.0)?|3(\.0)?|4(\.0)?|5(\.0)?)$"
                                                         title="Debe ser un número entre 0 y 5, opcionalmente seguido de un decimal separado por punto."

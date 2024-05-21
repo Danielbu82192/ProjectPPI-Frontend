@@ -215,12 +215,12 @@ function Page() {
             <div className='pt-8 pb-8 w-full text-center'>
                 <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-5 pb-5 pr-5 flex justify-between items-center'>
                     <div>
-                        <h1 className={`text-4xl font-bold text-gray-600 md:text-left ${isMobile && 'text-center-mobile'}`}>
+                        <h1 className={`text-2xl font-bold text-gray-600 md:text-left ${isMobile && 'text-center-mobile'}`}>
                             Entregas: {equipoCodigo && `Equipo ${equipoCodigo}`} {aliasProyecto && `- ${aliasProyecto}`}
                         </h1>
                     </div>
                 </div>
-                <div className='p-5'>
+                <div className='pl-5 pr-5'>
                     {loading ? (
                         <p>Cargando...</p>
                     ) : (

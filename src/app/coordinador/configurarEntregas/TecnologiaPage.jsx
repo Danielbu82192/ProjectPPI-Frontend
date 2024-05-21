@@ -9,7 +9,7 @@ import './Page.css';
 
 registerLocale('es', es);
 
-function Page() {
+function TecnologiaPage() {
     const [entregas, setEntregas] = useState([]);
     const [fechaEntrega, setFechaEntrega] = useState({});
     const [fechaCalificacion, setFechaCalificacion] = useState({});
@@ -187,15 +187,14 @@ function Page() {
 
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b flex justify-between">
-            <div className='pt-2 pb-8 w-full'>
-                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-2 flex justify-between items-center'>
+            <div className='pt-1 pb-8 w-full'>
+                <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-2 pb-0 pr-52 flex justify-between items-center'>
                     <div>
-                        <h1 className='text-2xl font-bold text-gray-600'>Configurar Entregas</h1>
+                        <h1 className='text-2xl p-1 font-bold text-gray-600'>Configurar Entregas Tecnología</h1>
                     </div>
                 </div>
-                <div className='pl-5 pr-5'>
-                    <div className="mt-5">
-                        {/*<p>A continuación, configura las entregas del semestre. Para más información sobre cada columna, pon el cursor sobre el título. Revisa y, una vez listo, haz clic en Guardar Entregas.</p><br></br>*/}
+                <div className='p-2'>
+                    <div className="mt-2">
                         <div className="table-container">
                             <table className="table">
                                 <thead>
@@ -340,4 +339,4 @@ function Page() {
     )
 }
 
-export default Page;
+export default TecnologiaPage;
