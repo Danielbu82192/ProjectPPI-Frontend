@@ -9,8 +9,8 @@ function Page() {
     const [bitacora, setBitacora] = useState([]);
     const [entregaSettings, setEntregaSettings] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [entregaByID, setEntregaByID] = useState([]);
     const [notaAsesoriaDefinitiva, setNotaAsesoriaDefinitiva] = useState(null);
+    const [calificacionesUsuario, setCalificacionesUsuario] = useState([]);
 
     useEffect(() => {
         moment.locale('es');
@@ -24,7 +24,7 @@ function Page() {
                     const data = await response.json();
                     setEquipoUsuarios(data);
                     const notaAsesoriaDefinitiva = data.length > 0 ? data[0].Nota_Asesoria_Definitiva_Individual : null;
-                    setNotaAsesoriaDefinitiva(notaAsesoriaDefinitiva); // Asignar el valor aquí
+                    setNotaAsesoriaDefinitiva(notaAsesoriaDefinitiva);
                     console.log("Nota Asesoría Definitiva Individual:", notaAsesoriaDefinitiva);
                 } else {
                     setEquipoUsuarios([]);
@@ -40,8 +40,8 @@ function Page() {
     }, []);
 
     useEffect(() => {
-        if (equipoUsuarios.length > 0) {
-            const fetchBitacora = async () => {
+        const fetchBitacora = async () => {
+            if (equipoUsuarios.length > 0) {
                 try {
                     const codigoEquipo = equipoUsuarios[0].Codigo_Equipo;
                     const response = await fetch(`https://td-g-production.up.railway.app/equipo-ppi/GetBitacoraByCode/${codigoEquipo}`);
@@ -59,10 +59,10 @@ function Page() {
                 } catch (error) {
                     console.error('Error fetching bitacora:', error);
                 }
-            };
+            }
+        };
 
-            fetchBitacora();
-        }
+        fetchBitacora();
     }, [equipoUsuarios]);
 
     useEffect(() => {
@@ -85,51 +85,44 @@ function Page() {
     }, []);
 
     useEffect(() => {
-        const fetchEntregaByID = async () => {
+        const fetchCalificacionesUsuario = async () => {
             try {
-                const codigoEquipo = equipoUsuarios[0].Codigo_Equipo;
-                const response = await fetch(`https://td-g-production.up.railway.app/entrega-equipo-ppi/GetPPIEntregaByID/${codigoEquipo}`);
+                const response = await fetch('https://backend.dbcpolijic2024.online/usuario-calificacion/61566');
                 if (response.ok) {
-                    let data = await response.json();
-                    // Si la entrega de Asesorías no está presente, la agregamos al arreglo
-                    if (!data.find(entrega => entrega.Tipo_Entrega_Descripcion === "Asesorías")) {
-                        const notaAsesoriaDefinitivaEntrega = {
-                            Tipo_Entrega_Descripcion: "Asesorías",
-                            Calificacion_Entrega: notaAsesoriaDefinitiva
-                        };
-                        data = [...data, notaAsesoriaDefinitivaEntrega];
-                    }
-                    setEntregaByID(data);
+                    const data = await response.json();
+                    setCalificacionesUsuario(data);
                 } else {
-                    setEntregaByID([]);
+                    setCalificacionesUsuario([]);
                 }
             } catch (error) {
-                console.error('Error fetching entrega by ID:', error);
+                console.error('Error fetching user ratings:', error);
             }
         };
 
-        if (equipoUsuarios.length > 0) {
-            fetchEntregaByID();
-        }
-    }, [equipoUsuarios, notaAsesoriaDefinitiva]);
+        fetchCalificacionesUsuario();
+    }, []);
 
     const isEntregado = (nombreEntrega) => {
-        return entregaByID.some(entrega => entrega.Tipo_Entrega_Descripcion === nombreEntrega);
+        return nombreEntrega !== "Asesorías" && calificacionesUsuario.some(calificacion => calificacion.entrega === entregaSettings.find(setting => setting.nombre === nombreEntrega).id);
     };
 
-    const sumaMultiplicaciones = entregaSettings.reduce((accumulator, setting) => {
-        let calificacion;
+    const calificacionesDisponibles = entregaSettings.map(setting => {
         if (setting.nombre === "Asesorías") {
-            calificacion = notaAsesoriaDefinitiva;
+            return notaAsesoriaDefinitiva;
         } else {
-            calificacion = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === setting.nombre)?.Calificacion_Entrega;
+            const calificacion = calificacionesUsuario.find(calificacion => calificacion.entrega === setting.id)?.calificacion;
+            return calificacion !== undefined && !isNaN(calificacion) ? parseFloat(calificacion) : 0;
         }
-        if (calificacion !== undefined) {
-            const porcentajeDecimal = setting.porcentaje / 100;
-            accumulator += calificacion * porcentajeDecimal;
-        }
+    });
+
+    const sumaMultiplicaciones = calificacionesDisponibles.reduce((accumulator, calificacion, index) => {
+        const porcentajeDecimal = entregaSettings[index].porcentaje / 100;
+        accumulator += calificacion * porcentajeDecimal;
         return accumulator;
     }, 0);
+
+    const notaDefinitivaPPI = isNaN(sumaMultiplicaciones) ? '-' : sumaMultiplicaciones.toFixed(2);
+
 
     const getIconoCalificacion = (calificacion) => {
         if (calificacion && calificacion !== '-') {
@@ -149,13 +142,15 @@ function Page() {
         if (nombreEntrega === "Asesorías") {
             return notaAsesoriaDefinitiva !== null ? notaAsesoriaDefinitiva : '-';
         } else {
-            const entrega = entregaByID.find(entrega => entrega.Tipo_Entrega_Descripcion === nombreEntrega);
-            return entrega ? (entrega.Calificacion_Entrega !== null ? entrega.Calificacion_Entrega : '-') : '-';
+            const setting = entregaSettings.find(setting => setting.nombre === nombreEntrega);
+            const calificacion = calificacionesUsuario.find(calificacion => calificacion.entrega === setting.id)?.calificacion;
+            return calificacion !== undefined ? calificacion : '-';
         }
     };
 
     const codigoEquipo = equipoUsuarios.length > 0 ? equipoUsuarios[0].Codigo_Equipo : 'N/A';
     const aliasProyecto = bitacora.length > 0 ? bitacora[0].Alias_Proyecto : 'N/A';
+
 
     return (
         <div className="ml-6 mr-6 mt-6 border bg-white border-b flex justify-between">

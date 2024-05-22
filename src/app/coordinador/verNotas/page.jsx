@@ -4,14 +4,19 @@ import axios from 'axios';
 import dynamic from 'next/dynamic';
 import { FiArrowLeft } from "react-icons/fi";
 
+const ReactHTMLTableToExcel = dynamic(() => import('react-html-table-to-excel'), { ssr: false });
+
 function Page() {
-    const [equiposConNotas, setEquiposConNotas] = useState([]); // Estado para almacenar los equipos y sus notas
+    const [equiposConNotas, setEquiposConNotas] = useState({}); // Estado para almacenar los equipos y sus notas
     const [selectedEquipo, setSelectedEquipo] = useState(null); // Estado para el equipo seleccionado
     const [usuarios, setUsuarios] = useState({}); // Estado para almacenar los usuarios
     const [entregas, setEntregas] = useState([]); // Estado para almacenar los tipos de entrega
-    const ReactHTMLTableToExcel = dynamic(() => import('react-html-table-to-excel'), { ssr: false }); // Cargar dinámicamente la librería para exportar a Excel
 
-    // useEffect para cargar los datos de usuarios, equipos y entregas al montar el componente
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth() + 1;
+    const semester = currentMonth >= 1 && currentMonth <= 6 ? 1 : 2;
+    const fileName = `Notas PPI ${currentYear} - ${semester}`;
+
     useEffect(() => {
         // Función para obtener los usuarios
         const fetchUsuarios = async () => {
@@ -59,12 +64,6 @@ function Page() {
         fetchEntregas(); // Llamar la función para obtener tipos de entrega
     }, []);
 
-    // Obtener el nombre del archivo de Excel basado en el año y semestre actuales
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1;
-    const semester = currentMonth >= 1 && currentMonth <= 6 ? 1 : 2;
-    const fileName = `Notas PPI ${currentYear} - ${semester}`;
-
     // Función para manejar el click en un equipo
     const handleEquipoClick = (codigoEquipo) => {
         const equipoSeleccionado = equiposConNotas[codigoEquipo];
@@ -77,14 +76,56 @@ function Page() {
         return str2.replace(/\b\w/g, (char) => char.toUpperCase());
     };
 
-    console.log('equiposConNotas:', equiposConNotas);
+    // Función para obtener las calificaciones de un usuario específico
+    const fetchCalificaciones = async (idUsuario) => {
+        try {
+            const response = await axios.get(`https://backend.dbcpolijic2024.online/usuario-calificacion/${idUsuario}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching calificaciones for user ${idUsuario}:`, error);
+            return [];
+        }
+    };
+
+    // Obtener las calificaciones de cada usuario después de obtener los usuarios
+    useEffect(() => {
+        const asignarCalificaciones = async () => {
+            const calificacionesUsuarios = {};
+            await Promise.all(
+                Object.keys(usuarios).map(async (idUsuario) => {
+                    const calificaciones = await fetchCalificaciones(idUsuario);
+                    calificacionesUsuarios[idUsuario] = calificaciones;
+                })
+            );
+            // Actualizar la tabla con las calificaciones
+            setEquiposConNotas((prevState) => {
+                return Object.keys(prevState).reduce((acc, codigoEquipo) => {
+                    acc[codigoEquipo] = prevState[codigoEquipo].map((integrante) => {
+                        // Obtener las calificaciones del usuario
+                        const calificacionesUsuario = calificacionesUsuarios[integrante.Usuario_ID] || [];
+                        // Mapear sobre las calificaciones y asignarlas a la tabla
+                        calificacionesUsuario.forEach((calificacion) => {
+                            const entregaID = calificacion.entrega;
+                            integrante[entregaID] = calificacion.calificacion;
+                        });
+                        return integrante;
+                    });
+                    return acc;
+                }, {});
+            });
+        };
+
+        if (Object.keys(usuarios).length > 0) {
+            asignarCalificaciones();
+        }
+    }, [usuarios]);
 
     return (
         <div className="ml-2 mr-6 mt-6 border bg-white border-b">
             <div className='pt-8 pb-8 w-full text-center'>
                 <div className='md:h-22 lg:h-22 xl:h-22 sm:h-22 border-b-2 pl-8 pb-5 pr-52 flex justify-between items-center'>
                     <div>
-                        <h1 className='text-4xl font-bold text-gray-600'>Tabla de notas</h1>
+                        <h1 className='text-4xl font-bold text-gray-600'>Tabla de Notas</h1>
                     </div>
                 </div>
                 <br />
@@ -108,7 +149,7 @@ function Page() {
                                         <th className="border border-gray-300 text-sm px-2 py-1">Cédula</th>
                                         {entregas.map((entrega) => (
                                             <th key={entrega.id} className="border text-sm border-gray-300 px-2 py-1">
-                                                {entrega.nombre} {entrega.Porcentaje_Entrega}%
+                                                {entrega.nombre} ({entrega.Porcentaje_Entrega}%)
                                             </th>
                                         ))}
                                     </tr>
@@ -130,19 +171,17 @@ function Page() {
                                                             </td>
                                                         )}
                                                         <td className="border border-gray-300 text-sm px-4 py-2">{usuario?.documento}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Pitch}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Cuadrante1}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Cuadrante2}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Socializacion1}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Cuadrante3}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Cuadrante4}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Socializacion2}</td>
-                                                        <td className="border border-gray-300 text-sm px-4 py-2">{integrante.Asesorias}</td>
+                                                        {entregas.map((entrega) => (
+                                                            <td key={entrega.id} className="border border-gray-300 text-sm px-4 py-2">
+                                                                {entrega.id === 8 ? integrante.Nota_Asesoria_Definitiva_Individual : integrante[entrega.id]}
+                                                            </td>
+                                                        ))}
                                                     </tr>
                                                 );
                                             })}
                                         </React.Fragment>
                                     ))}
+
                                 </tbody>
                             </table>
                         </div>

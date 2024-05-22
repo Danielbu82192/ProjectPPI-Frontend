@@ -325,7 +325,6 @@ function Page() {
                                         Guardar Notas
                                     </button>
 
-
                                 </div>
                             )}
                         </div>
